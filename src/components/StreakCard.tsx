@@ -1,0 +1,73 @@
+import { StyleSheet, Text, View } from 'react-native';
+
+import type { AppTheme } from '@/theme/colors';
+import { useThemeColors } from '@/theme/useThemeColors';
+
+type StreakCardProps = {
+  streak: number;
+  completedCount: number;
+};
+
+export const StreakCard = ({ streak, completedCount }: StreakCardProps) => {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.statBlock}>
+        <Text style={styles.label}>연속 출석</Text>
+        <Text style={styles.value}>🔥 {streak}일</Text>
+      </View>
+      <View style={styles.divider} />
+      <View style={styles.statBlock}>
+        <Text style={styles.label}>배운 표현</Text>
+        <Text style={styles.value}>{completedCount}개</Text>
+      </View>
+    </View>
+  );
+};
+
+const createStyles = (colors: AppTheme) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: 24,
+      borderWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 16,
+      shadowColor: colors.cardShadow,
+      shadowOpacity: 0.08,
+      shadowRadius: 22,
+      shadowOffset: { width: 0, height: 12 }
+    },
+    divider: {
+      backgroundColor: colors.border,
+      height: 42,
+      marginHorizontal: 8,
+      width: 1
+    },
+    label: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontWeight: '900',
+      letterSpacing: 0.7,
+      marginBottom: 7,
+      textAlign: 'center',
+      textTransform: 'uppercase'
+    },
+    statBlock: {
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center'
+    },
+    value: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '900',
+      textAlign: 'center'
+    }
+  });
