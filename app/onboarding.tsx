@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   Image,
   Linking,
@@ -18,7 +19,10 @@ import {
 import { useState } from "react";
 import Svg, { Path } from "react-native-svg";
 
-import { useAppStore } from "@/store/useAppStore";
+import {
+  type AdAgeTreatment,
+  useAppStore,
+} from "@/store/useAppStore";
 import type { AppTheme } from "@/theme/colors";
 import { useThemeColors } from "@/theme/useThemeColors";
 import { AuthProvider } from "ctx";
@@ -46,12 +50,74 @@ type AppleSignInInfo = {
 
 type SocialSignInInfo = KakaoSignInInfo | AppleSignInInfo;
 
+function getAge(year: number, month: number, day: number) {
+  const today = new Date();
+  const birthDate = new Date(year, month - 1, day);
+
+  if (
+    birthDate.getFullYear() !== year ||
+    birthDate.getMonth() !== month - 1 ||
+    birthDate.getDate() !== day ||
+    birthDate > today
+  ) {
+    return null;
+  }
+
+  let age = today.getFullYear() - year;
+  const hasNotHadBirthday =
+    today.getMonth() < month - 1 ||
+    (today.getMonth() === month - 1 && today.getDate() < day);
+
+  if (hasNotHadBirthday) {
+    age -= 1;
+  }
+
+  return age >= 0 && age <= 120 ? age : null;
+}
+
+function getAdAgeTreatment(age: number): AdAgeTreatment {
+  if (age < 14) {
+    return "child";
+  }
+
+  return age < 18 ? "teen" : "adult";
+}
+
 export default function OnboardingScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
+  const adAgeTreatment = useAppStore((state) => state.adAgeTreatment);
+  const hasCompletedOnboarding = useAppStore(
+    (state) => state.hasCompletedOnboarding,
+  );
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
+  const setAdAgeTreatment = useAppStore((state) => state.setAdAgeTreatment);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [birthYear, setBirthYear] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthDay, setBirthDay] = useState("");
+  const [ageError, setAgeError] = useState<string | null>(null);
+
+  function handleAgeConfirmation() {
+    const age = getAge(
+      Number(birthYear),
+      Number(birthMonth),
+      Number(birthDay),
+    );
+
+    if (age === null) {
+      setAgeError("올바른 생년월일을 입력해주세요.");
+      return;
+    }
+
+    setAgeError(null);
+    setAdAgeTreatment(getAdAgeTreatment(age));
+
+    if (hasCompletedOnboarding) {
+      router.replace("/home");
+    }
+  }
 
   async function openLegalDocument(url: string) {
     try {
@@ -156,6 +222,69 @@ export default function OnboardingScreen() {
     }
   }
 
+  function handleLocalStart() {
+    completeOnboarding();
+    router.replace("/home");
+  }
+
+  if (adAgeTreatment === null) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.ageGateContainer}>
+          <Text style={styles.eyebrow}>Daily English</Text>
+          <Text style={styles.ageGateTitle}>생년월일을 입력해주세요</Text>
+          <Text style={styles.ageGateSubtitle}>
+            연령에 맞는 개인정보 보호 및 광고 설정을 적용하기 위해 필요합니다.
+          </Text>
+
+          <View style={styles.ageInputRow}>
+            <TextInput
+              accessibilityLabel="태어난 연도"
+              keyboardType="number-pad"
+              maxLength={4}
+              onChangeText={(value) => setBirthYear(value.replace(/\D/g, ""))}
+              placeholder="YYYY"
+              placeholderTextColor={colors.textMuted}
+              style={[styles.ageInput, styles.yearInput]}
+              value={birthYear}
+            />
+            <Text style={styles.dateSeparator}>/</Text>
+            <TextInput
+              accessibilityLabel="태어난 월"
+              keyboardType="number-pad"
+              maxLength={2}
+              onChangeText={(value) => setBirthMonth(value.replace(/\D/g, ""))}
+              placeholder="MM"
+              placeholderTextColor={colors.textMuted}
+              style={styles.ageInput}
+              value={birthMonth}
+            />
+            <Text style={styles.dateSeparator}>/</Text>
+            <TextInput
+              accessibilityLabel="태어난 일"
+              keyboardType="number-pad"
+              maxLength={2}
+              onChangeText={(value) => setBirthDay(value.replace(/\D/g, ""))}
+              placeholder="DD"
+              placeholderTextColor={colors.textMuted}
+              style={styles.ageInput}
+              value={birthDay}
+            />
+          </View>
+
+          {ageError ? <Text style={styles.ageErrorText}>{ageError}</Text> : null}
+
+          <Text style={styles.agePrivacyText}>
+            생년월일은 저장하지 않으며, 확인된 연령 구간만 이 기기에 저장합니다.
+          </Text>
+          <Pressable style={styles.ageContinueButton} onPress={handleAgeConfirmation}>
+            <Text style={styles.ageContinueButtonText}>계속</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -181,88 +310,110 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        <View style={styles.snsSignUpContainer}>
-          <Text style={styles.snsSignUp}>SNS 계정으로 간편하게 시작하기</Text>
-        </View>
-        <View style={styles.authContainer}>
-          <Pressable
-            onPress={() => {
-              void handleSocialSignIn("APPLE");
-            }}
-            disabled={isSubmitting}
-            style={[styles.authCircleButton, { backgroundColor: "#000000" }]}
-          >
-            <Svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              style={{ transform: [{ translateY: -1 }] }}
-            >
-              <Path
-                fill="white"
-                d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
-              />
-            </Svg>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              void handleSocialSignIn("GOOGLE");
-            }}
-            disabled={isSubmitting}
-            style={[styles.authCircleButton, { backgroundColor: "#4285F4" }]}
-          >
-            <Svg width={20} height={20} viewBox="0 0 24 24">
-              <Path
-                fill="white"
-                d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-              />
-            </Svg>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              void handleSocialSignIn("KAKAO");
-            }}
-            disabled={isSubmitting}
-            style={[
-              styles.authCircleButton,
-              { backgroundColor: "#FFCD00" },
-              isSubmitting && { opacity: 0.55 },
-            ]}
-          >
-            <Image
-              style={{
-                width: 22,
-                height: 20,
-              }}
-              source={require("@/assets/images/kakao.png")}
-            />
-          </Pressable>
-        </View>
-        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-        <View style={styles.infoTextContainer}>
-          <Text style={styles.infoText}>
-            최초 로그인 시{" "}
-            <Text
-              style={styles.infoTextLink}
-              onPress={() => {
-                void openLegalDocument(TERMS_OF_SERVICE_URL);
-              }}
-            >
-              이용약관
+        {adAgeTreatment === "child" ? (
+          <View style={styles.childStartContainer}>
+            <Pressable style={styles.button} onPress={handleLocalStart}>
+              <Text style={styles.buttonText}>계정 없이 시작하기</Text>
+            </Pressable>
+            <Text style={styles.childPrivacyText}>
+              계정 정보를 입력하지 않고 이 기기에만 학습 기록을 저장합니다.{" "}
+              <Text
+                style={styles.infoTextLink}
+                onPress={() => {
+                  void openLegalDocument(PRIVACY_POLICY_URL);
+                }}
+              >
+                개인정보 취급방침
+              </Text>
             </Text>
-            과
-            <Text
-              style={styles.infoTextLink}
-              onPress={() => {
-                void openLegalDocument(PRIVACY_POLICY_URL);
-              }}
-            >
-              개인정보 취급방침
-            </Text>
-            에
-          </Text>
-          <Text style={styles.infoText}>동의하는 것으로 간주합니다.</Text>
-        </View>
+            {errorMsg ? <Text style={styles.inlineErrorText}>{errorMsg}</Text> : null}
+          </View>
+        ) : (
+          <>
+            <View style={styles.snsSignUpContainer}>
+              <Text style={styles.snsSignUp}>SNS 계정으로 간편하게 시작하기</Text>
+            </View>
+            <View style={styles.authContainer}>
+              <Pressable
+                onPress={() => {
+                  void handleSocialSignIn("APPLE");
+                }}
+                disabled={isSubmitting}
+                style={[styles.authCircleButton, { backgroundColor: "#000000" }]}
+              >
+                <Svg
+                  width={20}
+                  height={20}
+                  viewBox="0 0 24 24"
+                  style={{ transform: [{ translateY: -1 }] }}
+                >
+                  <Path
+                    fill="white"
+                    d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
+                  />
+                </Svg>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  void handleSocialSignIn("GOOGLE");
+                }}
+                disabled={isSubmitting}
+                style={[styles.authCircleButton, { backgroundColor: "#4285F4" }]}
+              >
+                <Svg width={20} height={20} viewBox="0 0 24 24">
+                  <Path
+                    fill="white"
+                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                  />
+                </Svg>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  void handleSocialSignIn("KAKAO");
+                }}
+                disabled={isSubmitting}
+                style={[
+                  styles.authCircleButton,
+                  { backgroundColor: "#FFCD00" },
+                  isSubmitting && { opacity: 0.55 },
+                ]}
+              >
+                <Image
+                  style={{
+                    width: 22,
+                    height: 20,
+                  }}
+                  source={require("@/assets/images/kakao.png")}
+                />
+              </Pressable>
+            </View>
+            {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoText}>
+                최초 로그인 시{" "}
+                <Text
+                  style={styles.infoTextLink}
+                  onPress={() => {
+                    void openLegalDocument(TERMS_OF_SERVICE_URL);
+                  }}
+                >
+                  이용약관
+                </Text>
+                과
+                <Text
+                  style={styles.infoTextLink}
+                  onPress={() => {
+                    void openLegalDocument(PRIVACY_POLICY_URL);
+                  }}
+                >
+                  개인정보 취급방침
+                </Text>
+                에
+              </Text>
+              <Text style={styles.infoText}>동의하는 것으로 간주합니다.</Text>
+            </View>
+          </>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -270,6 +421,66 @@ export default function OnboardingScreen() {
 
 const createStyles = (colors: AppTheme) =>
   StyleSheet.create({
+    ageContinueButton: {
+      alignItems: "center",
+      backgroundColor: colors.primary,
+      borderRadius: 22,
+      marginTop: 28,
+      paddingVertical: 17,
+    },
+    ageContinueButtonText: {
+      color: "#FFFFFF",
+      fontSize: 17,
+      fontWeight: "900",
+    },
+    ageErrorText: {
+      color: "#EF4444",
+      fontSize: 14,
+      marginTop: 12,
+    },
+    ageGateContainer: {
+      flex: 1,
+      justifyContent: "center",
+      padding: 24,
+    },
+    ageGateSubtitle: {
+      color: colors.textMuted,
+      fontSize: 16,
+      lineHeight: 24,
+      marginTop: 14,
+    },
+    ageGateTitle: {
+      color: colors.text,
+      fontSize: 34,
+      fontWeight: "900",
+      letterSpacing: -1,
+      lineHeight: 42,
+      marginTop: 14,
+    },
+    ageInput: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderRadius: 16,
+      borderWidth: 1,
+      color: colors.text,
+      flex: 1,
+      fontSize: 20,
+      fontWeight: "700",
+      minHeight: 58,
+      paddingHorizontal: 12,
+      textAlign: "center",
+    },
+    ageInputRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      marginTop: 32,
+    },
+    agePrivacyText: {
+      color: colors.textMuted,
+      fontSize: 13,
+      lineHeight: 20,
+      marginTop: 24,
+    },
     button: {
       alignItems: "center",
       backgroundColor: colors.primary,
@@ -284,6 +495,17 @@ const createStyles = (colors: AppTheme) =>
     cardList: {
       gap: 14,
     },
+    childPrivacyText: {
+      color: colors.textMuted,
+      fontSize: 13,
+      lineHeight: 20,
+      marginTop: 14,
+      textAlign: "center",
+    },
+    childStartContainer: {
+      marginBottom: 72,
+      marginTop: 48,
+    },
     container: {
       flex: 1,
       justifyContent: "space-between",
@@ -296,6 +518,11 @@ const createStyles = (colors: AppTheme) =>
       letterSpacing: 1,
       marginTop: 24,
       textTransform: "uppercase",
+    },
+    dateSeparator: {
+      color: colors.textMuted,
+      fontSize: 22,
+      marginHorizontal: 7,
     },
     itemBody: {
       color: colors.textMuted,
@@ -344,6 +571,9 @@ const createStyles = (colors: AppTheme) =>
       letterSpacing: -1.4,
       lineHeight: 49,
       marginTop: 14,
+    },
+    yearInput: {
+      flex: 1.45,
     },
     snsSignUpContainer: {
       marginTop: 100,
@@ -395,5 +625,11 @@ const createStyles = (colors: AppTheme) =>
     },
     infoTextLink: {
       textDecorationLine: "underline",
+    },
+    inlineErrorText: {
+      color: "#EF4444",
+      fontSize: 14,
+      marginTop: 12,
+      textAlign: "center",
     },
   });

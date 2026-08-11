@@ -6,6 +6,8 @@ import { mockExpressions } from '@/data/mockExpressions';
 
 export const DEFAULT_SAVED_CATEGORY_ID = 'default';
 
+export type AdAgeTreatment = 'child' | 'teen' | 'adult';
+
 export type SavedCategory = {
   id: string;
   name: string;
@@ -14,6 +16,7 @@ export type SavedCategory = {
 
 export type AppState = {
   hasCompletedOnboarding: boolean;
+  adAgeTreatment: AdAgeTreatment | null;
   isPremium: boolean;
   currentExpressionId: number;
   completedExpressionIds: number[];
@@ -29,6 +32,7 @@ export type AppState = {
 
 type AppActions = {
   completeOnboarding: () => void;
+  setAdAgeTreatment: (value: AdAgeTreatment) => void;
   toggleFavorite: (id: number) => void;
   saveExpressionToCategory: (expressionId: number, categoryId: string) => void;
   removeExpressionFromCategory: (expressionId: number, categoryId: string) => void;
@@ -57,6 +61,7 @@ export const defaultSavedCategory: SavedCategory = {
 
 const initialState: AppState = {
   hasCompletedOnboarding: false,
+  adAgeTreatment: null,
   isPremium: false,
   currentExpressionId: 0,
   completedExpressionIds: [],
@@ -157,6 +162,7 @@ export const useAppStore = create<AppStore>()(
       ...initialState,
       hasHydrated: false,
       completeOnboarding: () => set({ hasCompletedOnboarding: true, currentExpressionId: getTodayExpressionId() }),
+      setAdAgeTreatment: (value) => set({ adAgeTreatment: value }),
       toggleFavorite: (id) =>
         set((state) => {
           const baseSavedMap = mergeLegacyFavoritesIntoMap(state);
@@ -293,6 +299,7 @@ export const useAppStore = create<AppStore>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         hasCompletedOnboarding: state.hasCompletedOnboarding,
+        adAgeTreatment: state.adAgeTreatment,
         isPremium: state.isPremium,
         currentExpressionId: state.currentExpressionId,
         completedExpressionIds: state.completedExpressionIds,

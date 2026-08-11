@@ -77,9 +77,9 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {!isPremium && <AdBanner />}
+      {!isPremium && <AdBanner />}
 
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Text style={styles.kicker}>오늘의 1문장</Text>
           <Text style={styles.heroTitle}>오늘은 이 문장 하나만</Text>

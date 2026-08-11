@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
+import { AdMobProvider } from "@/ads/AdMobProvider";
 import { useAppStore } from "@/store/useAppStore";
 import { useThemeColors } from "@/theme/useThemeColors";
 
@@ -13,7 +14,7 @@ export default function RootLayout() {
   const isDarkMode = useAppStore((state) => state.isDarkMode);
 
   return (
-    <>
+    <AdMobProvider>
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },
@@ -49,6 +50,6 @@ export default function RootLayout() {
         />
       </Stack>
       <StatusBar style={isDarkMode ? "light" : "dark"} />
-    </>
+    </AdMobProvider>
   );
 }

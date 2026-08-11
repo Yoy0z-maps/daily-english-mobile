@@ -8,6 +8,7 @@ export default function IndexScreen() {
   const colors = useThemeColors();
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const hasCompletedOnboarding = useAppStore((state) => state.hasCompletedOnboarding);
+  const adAgeTreatment = useAppStore((state) => state.adAgeTreatment);
 
   if (!hasHydrated) {
     return (
@@ -17,7 +18,9 @@ export default function IndexScreen() {
     );
   }
 
-  return <Redirect href={hasCompletedOnboarding ? '/home' : '/onboarding'} />;
+  return (
+    <Redirect href={adAgeTreatment !== null && hasCompletedOnboarding ? '/home' : '/onboarding'} />
+  );
 }
 
 const styles = StyleSheet.create({
