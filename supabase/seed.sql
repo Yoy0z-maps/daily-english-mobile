@@ -1,0 +1,2 @@
+-- Production starter content is versioned in migrations.
+-- Add local-only development fixtures here when they are needed.

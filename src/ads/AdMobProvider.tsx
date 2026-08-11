@@ -1,9 +1,5 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from 'react';
-import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
-import { Platform } from 'react-native';
-import mobileAds, { AdsConsent, MaxAdContentRating } from 'react-native-google-mobile-ads';
-
-import { useAppStore } from '@/store/useAppStore';
+import mobileAds, { MaxAdContentRating } from 'react-native-google-mobile-ads';
 
 type AdMobContextValue = {
   isReady: boolean;
@@ -11,48 +7,33 @@ type AdMobContextValue = {
 
 const AdMobContext = createContext<AdMobContextValue>({ isReady: false });
 
-let mobileAdsInitialization: Promise<boolean> | null = null;
+let mobileAdsInitialization: Promise<void> | null = null;
 
-const initializeMobileAdsIfAllowed = async () => {
-  const { canRequestAds } = await AdsConsent.getConsentInfo();
-
-  if (!canRequestAds) {
-    return false;
-  }
-
+const initializeMobileAds = async () => {
   if (!mobileAdsInitialization) {
     mobileAdsInitialization = mobileAds()
       .initialize()
-      .then(() => true)
+      .then(() => undefined)
       .catch((error) => {
         mobileAdsInitialization = null;
         throw error;
       });
   }
 
-  return mobileAdsInitialization;
+  await mobileAdsInitialization;
 };
 
 export const AdMobProvider = ({ children }: PropsWithChildren) => {
   const [isReady, setIsReady] = useState(false);
-  const adAgeTreatment = useAppStore((state) => state.adAgeTreatment);
-  const hasHydrated = useAppStore((state) => state.hasHydrated);
 
   useEffect(() => {
-    if (!hasHydrated || adAgeTreatment === null) {
-      setIsReady(false);
-      return;
-    }
-
     let isMounted = true;
-    const isChild = adAgeTreatment === 'child';
-    const isMinor = adAgeTreatment !== 'adult';
 
     const startMobileAds = async () => {
       try {
-        const didInitialize = await initializeMobileAdsIfAllowed();
+        await initializeMobileAds();
 
-        if (didInitialize && isMounted) {
+        if (isMounted) {
           setIsReady(true);
         }
       } catch (error) {
@@ -63,28 +44,13 @@ export const AdMobProvider = ({ children }: PropsWithChildren) => {
     const requestPrivacyPermissionsAndStartAds = async () => {
       try {
         await mobileAds().setRequestConfiguration({
-          maxAdContentRating: isChild ? MaxAdContentRating.G : MaxAdContentRating.PG,
-          tagForChildDirectedTreatment: isChild,
-          tagForUnderAgeOfConsent: isMinor
+          maxAdContentRating: MaxAdContentRating.PG,
+          tagForChildDirectedTreatment: false,
+          tagForUnderAgeOfConsent: true
         });
       } catch (error) {
-        console.warn('연령에 맞는 광고 요청 설정에 실패했습니다.', error);
+        console.warn('미성년자 보호 광고 요청 설정에 실패했습니다.', error);
         return;
-      }
-
-      if (Platform.OS === 'ios' && !isMinor) {
-        try {
-          // Mixed-audience apps must not request tracking permission from child/teen users.
-          await requestTrackingPermissionsAsync();
-        } catch (error) {
-          console.warn('iOS 추적 권한을 요청하지 못했습니다.', error);
-        }
-      }
-
-      try {
-        await AdsConsent.gatherConsent({ tagForUnderAgeOfConsent: isMinor });
-      } catch (error) {
-        console.warn('광고 개인정보 동의 상태를 확인하지 못했습니다.', error);
       }
 
       await startMobileAds();
@@ -95,7 +61,7 @@ export const AdMobProvider = ({ children }: PropsWithChildren) => {
     return () => {
       isMounted = false;
     };
-  }, [adAgeTreatment, hasHydrated]);
+  }, []);
 
   return <AdMobContext.Provider value={{ isReady }}>{children}</AdMobContext.Provider>;
 };

@@ -22,10 +22,10 @@
     "expo-apple-authentication": "~56.0.4",
     "expo-build-properties": "~56.0.19",
     "expo-constants": "56.0.18",
+    "expo-crypto": "~56.0.4",
     "expo-linking": "56.0.14",
     "expo-router": "56.2.11",
     "expo-status-bar": "56.0.4",
-    "expo-tracking-transparency": "~56.0.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
@@ -33,11 +33,13 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
     "react-native-svg": "^15.15.5",
+    "react-native-url-polyfill": "^4.0.0",
     "react-native-web": "^0.21.2",
     "zustand": "5.0.14"
   },
   "devDependencies": {
     "@types/react": "19.2.17",
+    "supabase": "^2.113.0",
     "typescript": "6.0.3"
   }
 }

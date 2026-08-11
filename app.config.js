@@ -6,8 +6,6 @@ const ADMOB_ANDROID_APP_ID =
   process.env.ADMOB_ANDROID_APP_ID ?? "ca-app-pub-3780332868290454~6325666938";
 const ADMOB_IOS_APP_ID =
   process.env.ADMOB_IOS_APP_ID ?? "ca-app-pub-3780332868290454~1675975485";
-const USER_TRACKING_PERMISSION_TEXT =
-  "맞춤형 광고를 제공하기 위해 기기 식별자를 사용합니다.";
 
 // Keep this list aligned with Google's current iOS Mobile Ads quick-start guide.
 const ADMOB_SK_AD_NETWORK_ITEMS = [
@@ -96,12 +94,6 @@ module.exports = {
     plugins: [
       "expo-router",
       "expo-apple-authentication",
-      [
-        "expo-tracking-transparency",
-        {
-          userTrackingPermission: USER_TRACKING_PERMISSION_TEXT,
-        },
-      ],
       [
         "react-native-google-mobile-ads",
         {

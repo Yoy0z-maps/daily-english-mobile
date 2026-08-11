@@ -1,14 +1,40 @@
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
+import { useAuth } from '@/auth/AuthProvider';
+import { signOutSocialSession } from '@/auth/socialAuth';
 import { PremiumCard } from '@/components/PremiumCard';
 import { StreakCard } from '@/components/StreakCard';
 import { useAppStore } from '@/store/useAppStore';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 
+const PROVIDER_LABELS: Record<string, string> = {
+  apple: 'Apple',
+  kakao: '카카오'
+};
+
+const getProviderSummary = (session: ReturnType<typeof useAuth>['session']) => {
+  if (!session) {
+    return '로그아웃 상태';
+  }
+
+  const metadataProviders = session.user.app_metadata.providers;
+  const providers = Array.isArray(metadataProviders)
+    ? metadataProviders.filter((provider): provider is string => typeof provider === 'string')
+    : typeof session.user.app_metadata.provider === 'string'
+      ? [session.user.app_metadata.provider]
+      : [];
+
+  return providers.map((provider) => PROVIDER_LABELS[provider] ?? provider).join(', ') || '소셜 로그인';
+};
+
 export default function SettingsScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
+  const { session } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const isPremium = useAppStore((state) => state.isPremium);
   const isDarkMode = useAppStore((state) => state.isDarkMode);
   const notificationsEnabled = useAppStore((state) => state.notificationsEnabled);
@@ -17,9 +43,37 @@ export default function SettingsScreen() {
   const setPremium = useAppStore((state) => state.setPremium);
   const toggleDarkMode = useAppStore((state) => state.toggleDarkMode);
   const toggleNotifications = useAppStore((state) => state.toggleNotifications);
+  const clearUserSession = useAppStore((state) => state.clearUserSession);
+  const providerSummary = getProviderSummary(session);
 
   const showMockAlert = (title: string) => {
     Alert.alert(title, 'MVP에서는 화면 이동/계정 처리를 mock으로만 표시합니다.');
+  };
+
+  const handleSignOut = () => {
+    Alert.alert('로그아웃', '이 기기에 남은 사용자 학습 캐시도 함께 비울까요?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '로그아웃',
+        style: 'destructive',
+        onPress: () => {
+          void (async () => {
+            setIsSigningOut(true);
+
+            try {
+              await signOutSocialSession(session);
+              clearUserSession();
+              router.replace('/');
+            } catch (error) {
+              const message = error instanceof Error ? error.message : '로그아웃에 실패했습니다.';
+              Alert.alert('로그아웃 실패', message);
+            } finally {
+              setIsSigningOut(false);
+            }
+          })();
+        }
+      }
+    ]);
   };
 
   return (
@@ -65,8 +119,15 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
-          <Pressable style={styles.menuRow} onPress={() => showMockAlert('로그아웃')}>
-            <Text style={styles.menuText}>로그아웃</Text>
+          <View style={styles.accountSummary}>
+            <Text style={styles.accountLabel}>Supabase 세션</Text>
+            <Text style={styles.accountValue}>
+              {session ? `${providerSummary} · ${session.user.email ?? '이메일 미제공'}` : '로그아웃 상태'}
+            </Text>
+            {session ? <Text style={styles.accountId}>UID {session.user.id}</Text> : null}
+          </View>
+          <Pressable style={styles.menuRow} disabled={isSigningOut} onPress={handleSignOut}>
+            <Text style={styles.menuText}>{isSigningOut ? '로그아웃 중…' : '로그아웃'}</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
           <Pressable style={styles.menuRow} onPress={() => showMockAlert('회원탈퇴하기')}>
@@ -93,6 +154,28 @@ export default function SettingsScreen() {
 
 const createStyles = (colors: AppTheme) =>
   StyleSheet.create({
+    accountLabel: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontWeight: '800'
+    },
+    accountId: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontWeight: '700',
+      marginTop: 6
+    },
+    accountSummary: {
+      borderTopColor: colors.border,
+      borderTopWidth: 1,
+      paddingVertical: 14
+    },
+    accountValue: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '900',
+      marginTop: 4
+    },
     chevron: {
       color: colors.textMuted,
       fontSize: 24,

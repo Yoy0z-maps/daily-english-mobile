@@ -1,16 +1,17 @@
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { useAuth } from '@/auth/AuthProvider';
 import { useAppStore } from '@/store/useAppStore';
 import { useThemeColors } from '@/theme/useThemeColors';
 
 export default function IndexScreen() {
   const colors = useThemeColors();
+  const { isReady: isAuthReady, session } = useAuth();
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const hasCompletedOnboarding = useAppStore((state) => state.hasCompletedOnboarding);
-  const adAgeTreatment = useAppStore((state) => state.adAgeTreatment);
 
-  if (!hasHydrated) {
+  if (!hasHydrated || !isAuthReady) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.primary} />
@@ -18,9 +19,9 @@ export default function IndexScreen() {
     );
   }
 
-  return (
-    <Redirect href={adAgeTreatment !== null && hasCompletedOnboarding ? '/home' : '/onboarding'} />
-  );
+  const canEnterHome = hasCompletedOnboarding && session !== null;
+
+  return <Redirect href={canEnterHome ? '/home' : '/onboarding'} />;
 }
 
 const styles = StyleSheet.create({
