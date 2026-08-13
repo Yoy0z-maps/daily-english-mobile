@@ -2,8 +2,10 @@ import { login as kakaoLogin, logout as kakaoLogout, me as getKakaoProfile } fro
 import type { Session, User } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
+import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+import { flushPendingLearningOperations } from '@/sync/learningSync';
 
 type ProfilePatch = {
   avatarUrl?: string | null;
@@ -12,18 +14,72 @@ type ProfilePatch = {
 
 const APPLE_NATIVE_CLIENT_ID = 'com.dailyenglish.sentences';
 const KAKAO_NATIVE_CLIENT_ID = 'bb53ac5001095de0bcbd0b3a539fbdf0';
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
+let isGoogleSignInConfigured = false;
 
-const getIdTokenSignInError = (provider: 'Apple' | 'Kakao', error: Error) => {
+type IdTokenProvider = 'Apple' | 'Google' | 'Kakao';
+type SupabaseIdTokenProvider = 'apple' | 'google' | 'kakao';
+
+const getIdTokenSignInError = (provider: IdTokenProvider, error: Error) => {
   if (!error.message.includes('Unacceptable audience in id_token')) {
     return error;
   }
 
   const expectedClientId =
-    provider === 'Apple' ? APPLE_NATIVE_CLIENT_ID : KAKAO_NATIVE_CLIENT_ID;
+    provider === 'Apple'
+      ? APPLE_NATIVE_CLIENT_ID
+      : provider === 'Kakao'
+        ? KAKAO_NATIVE_CLIENT_ID
+        : GOOGLE_WEB_CLIENT_ID;
 
   return new Error(
-    `Supabase ${provider} 로그인 설정의 허용 Client ID에 ${expectedClientId}를 추가해주세요.`
+    expectedClientId
+      ? `Supabase ${provider} 로그인 설정의 허용 Client ID에 ${expectedClientId}를 추가해주세요.`
+      : `Supabase ${provider} 로그인 설정의 허용 Client ID를 확인해주세요.`
   );
+};
+
+const getGoogleConfiguration = () => {
+  if (!GOOGLE_WEB_CLIENT_ID?.endsWith('.apps.googleusercontent.com')) {
+    throw new Error(
+      'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID에 Google 웹 OAuth 클라이언트 ID를 설정해주세요.'
+    );
+  }
+
+  if (Platform.OS === 'ios' && !GOOGLE_IOS_CLIENT_ID?.endsWith('.apps.googleusercontent.com')) {
+    throw new Error(
+      'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID에 Google iOS OAuth 클라이언트 ID를 설정해주세요.'
+    );
+  }
+
+  return {
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    ...(GOOGLE_IOS_CLIENT_ID ? { iosClientId: GOOGLE_IOS_CLIENT_ID } : {})
+  };
+};
+
+const getGoogleSignInSdk = async () => {
+  const configuration = getGoogleConfiguration();
+
+  try {
+    const googleSignInSdk = await import('react-native-nitro-google-signin');
+
+    if (!isGoogleSignInConfigured) {
+      googleSignInSdk.GoogleOneTapSignIn.configure({
+        ...configuration,
+        autoSelectOnSignIn: false
+      });
+      isGoogleSignInConfigured = true;
+    }
+
+    return googleSignInSdk;
+  } catch (error) {
+    const detail = error instanceof Error ? ` (${error.message})` : '';
+    throw new Error(
+      `Google 로그인 SDK가 포함된 개발 앱을 다시 빌드해주세요.${detail}`
+    );
+  }
 };
 
 const getDeviceTimezone = () => {
@@ -62,7 +118,7 @@ const getUserProviders = (user: User) => {
   return providers;
 };
 
-const verifySupabaseSession = async (session: Session, provider: 'apple' | 'kakao') => {
+const verifySupabaseSession = async (session: Session, provider: SupabaseIdTokenProvider) => {
   const { data, error } = await supabase.auth.getUser(session.access_token);
 
   if (error || !data.user || data.user.id !== session.user.id) {
@@ -198,8 +254,65 @@ export async function signInWithKakao() {
   return session;
 }
 
+export async function signInWithGoogle() {
+  const {
+    GoogleOneTapSignIn,
+    isCancelledResponse,
+    isNoSavedCredentialFoundResponse,
+    isSuccessResponse
+  } = await getGoogleSignInSdk();
+
+  await GoogleOneTapSignIn.checkPlayServices(true);
+
+  let response = await GoogleOneTapSignIn.signIn();
+
+  if (isNoSavedCredentialFoundResponse(response)) {
+    response = await GoogleOneTapSignIn.createAccount();
+  }
+
+  if (isNoSavedCredentialFoundResponse(response)) {
+    response = await GoogleOneTapSignIn.presentExplicitSignIn();
+  }
+
+  if (isCancelledResponse(response)) {
+    const cancellationError = new Error('로그인이 취소되었습니다.');
+    Object.assign(cancellationError, { code: 'SIGN_IN_CANCELLED' });
+    throw cancellationError;
+  }
+
+  if (!isSuccessResponse(response) || !response.data.idToken) {
+    throw new Error('Google ID 토큰을 받지 못했습니다. 다시 시도해주세요.');
+  }
+
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'google',
+    token: response.data.idToken
+  });
+
+  if (error) {
+    throw getIdTokenSignInError('Google', error);
+  }
+
+  const session = await verifySupabaseSession(requireSession(data.session), 'google');
+  await syncProfile(session, {
+    avatarUrl: response.data.user.photo,
+    nickname: response.data.user.name
+  });
+
+  return session;
+}
+
 export async function signOutSocialSession(session: Session | null) {
   const provider = session?.user.app_metadata.provider;
+
+  if (session) {
+    try {
+      await flushPendingLearningOperations(session.user.id);
+    } catch (error) {
+      console.warn('로그아웃 전에 남은 학습 데이터를 동기화하지 못했습니다.', error);
+    }
+  }
+
   const { error } = await supabase.auth.signOut();
 
   if (error) {
@@ -211,6 +324,15 @@ export async function signOutSocialSession(session: Session | null) {
       await kakaoLogout();
     } catch (error) {
       console.warn('카카오 SDK 로그아웃을 완료하지 못했습니다.', error);
+    }
+  }
+
+  if (provider === 'google') {
+    try {
+      const { GoogleOneTapSignIn } = await getGoogleSignInSdk();
+      await GoogleOneTapSignIn.signOut();
+    } catch (error) {
+      console.warn('Google SDK 로그아웃을 완료하지 못했습니다.', error);
     }
   }
 }

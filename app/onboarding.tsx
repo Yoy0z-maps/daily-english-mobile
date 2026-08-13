@@ -13,7 +13,11 @@ import { useState } from "react";
 import Svg, { Path } from "react-native-svg";
 
 import { useAppStore } from "@/store/useAppStore";
-import { signInWithApple, signInWithKakao } from "@/auth/socialAuth";
+import {
+  signInWithApple,
+  signInWithGoogle,
+  signInWithKakao,
+} from "@/auth/socialAuth";
 import type { AppTheme } from "@/theme/colors";
 import { useThemeColors } from "@/theme/useThemeColors";
 import type { AuthProvider } from "ctx";
@@ -54,6 +58,7 @@ export default function OnboardingScreen() {
       case "KAKAO":
         return signInWithKakao();
       case "GOOGLE":
+        return signInWithGoogle();
       case "NAVER":
         throw new Error(`${provider} 로그인은 아직 준비 중입니다.`);
     }

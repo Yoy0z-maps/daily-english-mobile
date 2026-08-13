@@ -6,6 +6,25 @@ const ADMOB_ANDROID_APP_ID =
   process.env.ADMOB_ANDROID_APP_ID ?? "ca-app-pub-3780332868290454~6325666938";
 const ADMOB_IOS_APP_ID =
   process.env.ADMOB_IOS_APP_ID ?? "ca-app-pub-3780332868290454~1675975485";
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
+const GOOGLE_IOS_URL_SCHEME = GOOGLE_IOS_CLIENT_ID?.endsWith(
+  ".apps.googleusercontent.com",
+)
+  ? `com.googleusercontent.apps.${GOOGLE_IOS_CLIENT_ID.slice(
+      0,
+      -".apps.googleusercontent.com".length,
+    )}`
+  : null;
+const GOOGLE_SIGN_IN_PLUGINS = GOOGLE_IOS_URL_SCHEME
+  ? [
+      [
+        "react-native-nitro-google-signin",
+        {
+          iosUrlScheme: GOOGLE_IOS_URL_SCHEME,
+        },
+      ],
+    ]
+  : [];
 
 // Keep this list aligned with Google's current iOS Mobile Ads quick-start guide.
 const ADMOB_SK_AD_NETWORK_ITEMS = [
@@ -94,6 +113,7 @@ module.exports = {
     plugins: [
       "expo-router",
       "expo-apple-authentication",
+      ...GOOGLE_SIGN_IN_PLUGINS,
       [
         "react-native-google-mobile-ads",
         {
