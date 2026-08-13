@@ -2,7 +2,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
-import { mockExpressions } from '@/data/mockExpressions';
+import { useContent } from '@/content/ContentProvider';
 import {
   DEFAULT_SAVED_CATEGORY_ID,
   defaultSavedCategory,
@@ -12,8 +12,12 @@ import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 import type { EnglishExpression } from '@/types/expression';
 
-const buildOptions = (correct: EnglishExpression, index: number) => {
-  const distractors = mockExpressions
+const buildOptions = (
+  correct: EnglishExpression,
+  index: number,
+  publishedExpressions: EnglishExpression[]
+) => {
+  const distractors = publishedExpressions
     .filter((expression) => expression.id !== correct.id)
     .sort((a, b) => ((a.id + 3) * (index + 5)) % 17 - (((b.id + 3) * (index + 5)) % 17))
     .slice(0, 3);
@@ -26,6 +30,7 @@ const buildOptions = (correct: EnglishExpression, index: number) => {
 export default function ReviewScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
+  const { expressions: publishedExpressions } = useContent();
   const params = useLocalSearchParams<{ categoryId?: string }>();
   const categoryId = params.categoryId ?? DEFAULT_SAVED_CATEGORY_ID;
   const recordReviewAnswer = useAppStore((state) => state.recordReviewAnswer);
@@ -53,16 +58,19 @@ export default function ReviewScreen() {
   }, [categoryId, favoriteExpressionIds, savedExpressionCategoryIds]);
   const category = categories.find((item) => item.id === categoryId) ?? categories[0];
   const expressions = useMemo(
-    () => mockExpressions.filter((expression) => savedExpressionIds.includes(expression.id)),
-    [savedExpressionIds]
+    () => publishedExpressions.filter((expression) => savedExpressionIds.includes(expression.id)),
+    [publishedExpressions, savedExpressionIds]
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const currentExpression = expressions[currentIndex];
   const options = useMemo(
-    () => (currentExpression ? buildOptions(currentExpression, currentIndex) : []),
-    [currentExpression, currentIndex]
+    () =>
+      currentExpression
+        ? buildOptions(currentExpression, currentIndex, publishedExpressions)
+        : [],
+    [currentExpression, currentIndex, publishedExpressions]
   );
   const isFinished = expressions.length > 0 && currentIndex >= expressions.length;
 
@@ -73,7 +81,7 @@ export default function ReviewScreen() {
 
     const isCorrect = id === currentExpression.id;
     setSelectedId(id);
-    recordReviewAnswer(currentExpression.id, isCorrect);
+    recordReviewAnswer(currentExpression.id, isCorrect, id);
 
     if (isCorrect) {
       setScore((value) => value + 1);

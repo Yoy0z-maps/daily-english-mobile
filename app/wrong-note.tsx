@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ExpressionCard } from '@/components/ExpressionCard';
-import { mockExpressions } from '@/data/mockExpressions';
+import { useContent } from '@/content/ContentProvider';
 import { useAppStore } from '@/store/useAppStore';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
@@ -11,12 +11,13 @@ import { useThemeColors } from '@/theme/useThemeColors';
 export default function WrongNoteScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
+  const { expressions: publishedExpressions } = useContent();
   const wrongAnswerExpressionIds = useAppStore((state) => state.wrongAnswerExpressionIds);
   const removeWrongAnswer = useAppStore((state) => state.removeWrongAnswer);
   const clearWrongAnswers = useAppStore((state) => state.clearWrongAnswers);
   const expressions = useMemo(
-    () => mockExpressions.filter((expression) => wrongAnswerExpressionIds.includes(expression.id)),
-    [wrongAnswerExpressionIds]
+    () => publishedExpressions.filter((expression) => wrongAnswerExpressionIds.includes(expression.id)),
+    [publishedExpressions, wrongAnswerExpressionIds]
   );
 
   return (

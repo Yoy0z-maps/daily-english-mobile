@@ -10,4 +10,11 @@ export type EnglishExpression = {
   exampleMeaning: string;
   level: 'A2' | 'B1' | 'B2' | 'C1';
   category: ExpressionCategory;
+  usageSituations?: string[];
+  extraExamples?: Array<{
+    sentence: string;
+    meaning: string;
+  }>;
+  toneTip?: string | null;
+  aiExplanation?: string | null;
 };

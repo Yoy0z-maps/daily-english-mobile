@@ -5,11 +5,9 @@ import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'rea
 import { AdBanner } from '@/components/AdBanner';
 import { ExpressionCard } from '@/components/ExpressionCard';
 import { SaveToCategoryModal } from '@/components/SaveToCategoryModal';
-import { mockExpressions } from '@/data/mockExpressions';
+import { useContent } from '@/content/ContentProvider';
 import {
   getLocalDateKey,
-  selectCurrentExpression,
-  selectExpressionForDaysAgo,
   selectIsExpressionSaved,
   useAppStore
 } from '@/store/useAppStore';
@@ -19,7 +17,6 @@ import { reloadAllWidgets } from '@/widget/reloadWidgets';
 import { saveWidgetExpressionData } from '@/widget/saveWidgetExpressionData';
 
 const FREE_HISTORY_DAYS = 3;
-const PREMIUM_HISTORY_DAYS = Math.max(mockExpressions.length - 1, FREE_HISTORY_DAYS);
 
 const getHistoryDateLabel = (daysAgo: number) => {
   const date = new Date();
@@ -36,8 +33,9 @@ const getHistoryDateLabel = (daysAgo: number) => {
 export default function HomeScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
-  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
-  const expression = useAppStore(selectCurrentExpression);
+  const { expressions } = useContent();
+  const [categoryModalExpressionId, setCategoryModalExpressionId] = useState<number | null>(null);
+  const currentExpressionId = useAppStore((state) => state.currentExpressionId);
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const streak = useAppStore((state) => state.streak);
   const isPremium = useAppStore((state) => state.isPremium);
@@ -46,12 +44,31 @@ export default function HomeScreen() {
   const completedExpressionIds = useAppStore((state) => state.completedExpressionIds);
   const lastCompletedDate = useAppStore((state) => state.lastCompletedDate);
   const completeToday = useAppStore((state) => state.completeToday);
+  const exactCurrentPosition = expressions.findIndex(
+    (item) => item.id === currentExpressionId
+  );
+  const nextCurrentPosition = expressions.findIndex(
+    (item) => item.id >= currentExpressionId
+  );
+  const currentPosition =
+    exactCurrentPosition >= 0
+      ? exactCurrentPosition
+      : nextCurrentPosition >= 0
+        ? nextCurrentPosition
+        : Math.max(0, expressions.length - 1);
+  const expression = expressions[currentPosition];
   const isSaved = useAppStore((state) => selectIsExpressionSaved(state, expression.id));
-  const historyDays = isPremium ? PREMIUM_HISTORY_DAYS : FREE_HISTORY_DAYS;
-  const historyExpressions = Array.from({ length: historyDays }, (_, index) => ({
-    daysAgo: index + 1,
-    expression: selectExpressionForDaysAgo(index + 1)
-  }));
+  const historyDays = Math.min(
+    currentPosition,
+    isPremium ? expressions.length - 1 : FREE_HISTORY_DAYS
+  );
+  const historyExpressions = Array.from({ length: historyDays }, (_, index) => {
+    const daysAgo = index + 1;
+    return {
+      daysAgo,
+      expression: expressions[currentPosition - daysAgo]
+    };
+  });
 
   const isCompletedToday = lastCompletedDate === getLocalDateKey() && completedExpressionIds.includes(expression.id);
 
@@ -65,8 +82,7 @@ export default function HomeScreen() {
 
   const syncWidgetFromStore = async () => {
     const state = useAppStore.getState();
-    const todayExpression = selectCurrentExpression();
-    await saveWidgetExpressionData(todayExpression, state.streak);
+    await saveWidgetExpressionData(expression, state.streak);
     await reloadAllWidgets();
   };
 
@@ -88,7 +104,7 @@ export default function HomeScreen() {
         <ExpressionCard
           expression={expression}
           isFavorite={isSaved}
-          onFavoritePress={() => setIsCategoryModalVisible(true)}
+          onFavoritePress={() => setCategoryModalExpressionId(expression.id)}
           showSaveControls={false}
           cardPressEnabled={false}
           detailLabel="오늘 문장 자세히 보기"
@@ -101,7 +117,10 @@ export default function HomeScreen() {
         />
 
         <View style={styles.actionRow}>
-          <Pressable style={styles.saveButton} onPress={() => setIsCategoryModalVisible(true)}>
+          <Pressable
+            style={styles.saveButton}
+            onPress={() => setCategoryModalExpressionId(expression.id)}
+          >
             <Text style={styles.saveButtonText}>{isSaved ? '저장 위치 변경' : '오늘 단어 저장하기'}</Text>
           </Pressable>
           <Pressable
@@ -132,7 +151,7 @@ export default function HomeScreen() {
                 compact
                 expression={historyExpression}
                 isFavorite={historyExpressionIsSaved}
-                onFavoritePress={() => setIsCategoryModalVisible(true)}
+                onFavoritePress={() => setCategoryModalExpressionId(historyExpression.id)}
                 showSaveControls={false}
                 cardPressEnabled={false}
                 detailLabel="이전 문장 자세히 보기"
@@ -157,9 +176,9 @@ export default function HomeScreen() {
       </ScrollView>
 
       <SaveToCategoryModal
-        visible={isCategoryModalVisible}
-        expressionId={expression.id}
-        onClose={() => setIsCategoryModalVisible(false)}
+        visible={categoryModalExpressionId !== null}
+        expressionId={categoryModalExpressionId ?? expression.id}
+        onClose={() => setCategoryModalExpressionId(null)}
       />
     </SafeAreaView>
   );

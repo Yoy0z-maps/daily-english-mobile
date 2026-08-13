@@ -6,7 +6,7 @@ import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { useAdMob } from '@/ads/AdMobProvider';
 import { rewardedAdUnitId } from '@/ads/adUnits';
 import { ExpressionCard } from '@/components/ExpressionCard';
-import { mockExpressions } from '@/data/mockExpressions';
+import { useContent } from '@/content/ContentProvider';
 import {
   DEFAULT_SAVED_CATEGORY_ID,
   defaultSavedCategory,
@@ -18,6 +18,7 @@ import { useThemeColors } from '@/theme/useThemeColors';
 export default function SavedScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
+  const { expressions: publishedExpressions } = useContent();
   const { isReady: isAdMobReady } = useAdMob();
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_SAVED_CATEGORY_ID);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
@@ -50,8 +51,8 @@ export default function SavedScreen() {
   }, [favoriteExpressionIds, savedExpressionCategoryIds, selectedCategoryId]);
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId) ?? categories[0];
   const expressions = useMemo(
-    () => mockExpressions.filter((expression) => savedExpressionIds.includes(expression.id)),
-    [savedExpressionIds]
+    () => publishedExpressions.filter((expression) => savedExpressionIds.includes(expression.id)),
+    [publishedExpressions, savedExpressionIds]
   );
   const pendingReviewCategoryId = useRef<string | null>(null);
   const rewardedAd = useRewardedAd(!isPremium && isAdMobReady ? rewardedAdUnitId : null);

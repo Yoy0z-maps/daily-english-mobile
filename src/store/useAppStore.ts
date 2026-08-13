@@ -2,7 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { mockExpressions } from '@/data/mockExpressions';
+import {
+  enqueueLearningOperation,
+  type LearningStateSnapshot
+} from '@/sync/learningSync';
 
 export const DEFAULT_SAVED_CATEGORY_ID = 'default';
 
@@ -33,11 +36,16 @@ type AppActions = {
   saveExpressionToCategory: (expressionId: number, categoryId: string) => void;
   removeExpressionFromCategory: (expressionId: number, categoryId: string) => void;
   createSavedCategory: (name: string) => string;
-  recordReviewAnswer: (expressionId: number, isCorrect: boolean) => void;
+  recordReviewAnswer: (
+    expressionId: number,
+    isCorrect: boolean,
+    selectedExpressionId?: number | null
+  ) => void;
   removeWrongAnswer: (expressionId: number) => void;
   clearWrongAnswers: () => void;
   clearUserSession: () => void;
   completeToday: () => void;
+  applyCloudLearningState: (snapshot: LearningStateSnapshot) => void;
   setPremium: (value: boolean) => void;
   toggleDarkMode: () => void;
   toggleNotifications: () => void;
@@ -84,16 +92,11 @@ const getDateDifference = (from: string, to: string) => {
   return Math.round((end.getTime() - start.getTime()) / 86_400_000);
 };
 
-const normalizeExpressionId = (id: number) => {
-  const total = mockExpressions.length;
-  return ((id % total) + total) % total;
-};
+const normalizeExpressionId = (id: number) =>
+  Number.isFinite(id) ? Math.max(0, Math.floor(id)) : 0;
 
-const getTodayExpressionId = () => {
-  const today = new Date(`${getLocalDateKey()}T00:00:00`);
-  const dayIndex = Math.floor(today.getTime() / 86_400_000);
-  return normalizeExpressionId(dayIndex);
-};
+const uniqueExpressionIds = (ids: number[]) =>
+  Array.from(new Set(ids.filter(Number.isFinite).map(normalizeExpressionId)));
 
 const getExpressionKey = (id: number) => String(id);
 
@@ -154,36 +157,46 @@ const removeCategoryFromMap = (
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
       hasHydrated: false,
-      completeOnboarding: () => set({ hasCompletedOnboarding: true, currentExpressionId: getTodayExpressionId() }),
-      toggleFavorite: (id) =>
-        set((state) => {
-          const baseSavedMap = mergeLegacyFavoritesIntoMap(state);
-          const currentCategoryIds = baseSavedMap[getExpressionKey(id)] ?? [];
-          const key = getExpressionKey(id);
-          let savedExpressionCategoryIds: Record<string, string[]>;
+      completeOnboarding: () => set({ hasCompletedOnboarding: true }),
+      toggleFavorite: (id) => {
+        const state = get();
+        const baseSavedMap = mergeLegacyFavoritesIntoMap(state);
+        const currentCategoryIds = baseSavedMap[getExpressionKey(id)] ?? [];
+        const key = getExpressionKey(id);
+        let savedExpressionCategoryIds: Record<string, string[]>;
 
-          if (currentCategoryIds.length > 0) {
-            savedExpressionCategoryIds = { ...baseSavedMap };
-            delete savedExpressionCategoryIds[key];
-          } else {
-            savedExpressionCategoryIds = {
-              ...state.savedExpressionCategoryIds,
-              [key]: [DEFAULT_SAVED_CATEGORY_ID]
-            };
-          }
-
-          return {
-            favoriteExpressionIds: syncFavoriteIdsFromSavedMap(savedExpressionCategoryIds),
-            savedExpressionCategoryIds
+        if (currentCategoryIds.length > 0) {
+          savedExpressionCategoryIds = { ...baseSavedMap };
+          delete savedExpressionCategoryIds[key];
+        } else {
+          savedExpressionCategoryIds = {
+            ...state.savedExpressionCategoryIds,
+            [key]: [DEFAULT_SAVED_CATEGORY_ID]
           };
-        }),
-      saveExpressionToCategory: (expressionId, categoryId) =>
-        set((state) => {
+        }
+
+        set({
+          favoriteExpressionIds: syncFavoriteIdsFromSavedMap(savedExpressionCategoryIds),
+          savedExpressionCategoryIds
+        });
+        void enqueueLearningOperation({
+          type: currentCategoryIds.length > 0 ? 'remove_from_category' : 'save_to_category',
+          expressionId: id,
+          categoryName: defaultSavedCategory.name
+        });
+      },
+      saveExpressionToCategory: (expressionId, categoryId) => {
+        const state = get();
+        const categoryName =
+          state.savedCategories.find((category) => category.id === categoryId)?.name ??
+          defaultSavedCategory.name;
+
+        set((currentState) => {
           const key = getExpressionKey(expressionId);
-          const baseSavedMap = mergeLegacyFavoritesIntoMap(state);
+          const baseSavedMap = mergeLegacyFavoritesIntoMap(currentState);
           const currentCategoryIds = baseSavedMap[key] ?? [];
           const nextCategoryIds = Array.from(new Set([...currentCategoryIds, categoryId]));
           const savedExpressionCategoryIds = {
@@ -195,11 +208,22 @@ export const useAppStore = create<AppStore>()(
             favoriteExpressionIds: syncFavoriteIdsFromSavedMap(savedExpressionCategoryIds),
             savedExpressionCategoryIds
           };
-        }),
-      removeExpressionFromCategory: (expressionId, categoryId) =>
-        set((state) => {
+        });
+        void enqueueLearningOperation({
+          type: 'save_to_category',
+          expressionId,
+          categoryName
+        });
+      },
+      removeExpressionFromCategory: (expressionId, categoryId) => {
+        const state = get();
+        const categoryName =
+          state.savedCategories.find((category) => category.id === categoryId)?.name ??
+          defaultSavedCategory.name;
+
+        set((currentState) => {
           const key = getExpressionKey(expressionId);
-          const baseSavedMap = mergeLegacyFavoritesIntoMap(state);
+          const baseSavedMap = mergeLegacyFavoritesIntoMap(currentState);
           const currentCategoryIds = baseSavedMap[key] ?? [];
           const savedExpressionCategoryIds = removeCategoryFromMap(
             {
@@ -214,35 +238,57 @@ export const useAppStore = create<AppStore>()(
             favoriteExpressionIds: syncFavoriteIdsFromSavedMap(savedExpressionCategoryIds),
             savedExpressionCategoryIds
           };
-        }),
+        });
+        void enqueueLearningOperation({
+          type: 'remove_from_category',
+          expressionId,
+          categoryName
+        });
+      },
       createSavedCategory: (name) => {
         const trimmedName = name.trim();
         const id = `category-${Date.now()}`;
+        const categoryName =
+          trimmedName.length > 0 ? trimmedName : `카테고리 ${get().savedCategories.length + 1}`;
 
         set((state) => ({
           savedCategories: [
             ...ensureDefaultCategory(state.savedCategories),
             {
               id,
-              name: trimmedName.length > 0 ? trimmedName : `카테고리 ${state.savedCategories.length + 1}`,
+              name: categoryName,
               createdAt: new Date().toISOString()
             }
           ]
         }));
 
+        void enqueueLearningOperation({ type: 'create_category', categoryName });
+
         return id;
       },
-      recordReviewAnswer: (expressionId, isCorrect) =>
+      recordReviewAnswer: (expressionId, isCorrect, selectedExpressionId = null) => {
         set((state) => ({
           wrongAnswerExpressionIds: isCorrect
             ? state.wrongAnswerExpressionIds.filter((id) => id !== expressionId)
             : Array.from(new Set([...state.wrongAnswerExpressionIds, expressionId]))
-        })),
-      removeWrongAnswer: (expressionId) =>
+        }));
+        void enqueueLearningOperation({
+          type: 'record_review',
+          expressionId,
+          selectedExpressionId,
+          isCorrect
+        });
+      },
+      removeWrongAnswer: (expressionId) => {
         set((state) => ({
           wrongAnswerExpressionIds: state.wrongAnswerExpressionIds.filter((id) => id !== expressionId)
-        })),
-      clearWrongAnswers: () => set({ wrongAnswerExpressionIds: [] }),
+        }));
+        void enqueueLearningOperation({ type: 'remove_wrong_note', expressionId });
+      },
+      clearWrongAnswers: () => {
+        set({ wrongAnswerExpressionIds: [] });
+        void enqueueLearningOperation({ type: 'clear_wrong_notes' });
+      },
       clearUserSession: () =>
         set({
           hasCompletedOnboarding: false,
@@ -256,19 +302,20 @@ export const useAppStore = create<AppStore>()(
           streak: 0,
           lastCompletedDate: null
         }),
-      completeToday: () =>
+      completeToday: () => {
+        const expressionId = get().currentExpressionId;
+
         set((state) => {
           const today = getLocalDateKey();
-          const todayExpressionId = getTodayExpressionId();
           const alreadyCompletedToday = state.lastCompletedDate === today;
-          const completedExpressionIds = state.completedExpressionIds.includes(todayExpressionId)
+          const completedExpressionIds = state.completedExpressionIds.includes(expressionId)
             ? state.completedExpressionIds
-            : [...state.completedExpressionIds, todayExpressionId];
+            : [...state.completedExpressionIds, expressionId];
 
           if (alreadyCompletedToday) {
             return {
               completedExpressionIds,
-              currentExpressionId: todayExpressionId,
+              currentExpressionId: expressionId,
               lastCompletedDate: today
             };
           }
@@ -278,10 +325,25 @@ export const useAppStore = create<AppStore>()(
 
           return {
             completedExpressionIds,
-            currentExpressionId: todayExpressionId,
+            currentExpressionId: expressionId,
             streak: shouldContinueStreak ? state.streak + 1 : 1,
             lastCompletedDate: today
           };
+        });
+
+        void enqueueLearningOperation({ type: 'complete_content', expressionId });
+      },
+      applyCloudLearningState: (snapshot) =>
+        set({
+          currentExpressionId: normalizeExpressionId(snapshot.currentExpressionId),
+          completedExpressionIds: uniqueExpressionIds(snapshot.completedExpressionIds),
+          favoriteExpressionIds: uniqueExpressionIds(snapshot.favoriteExpressionIds),
+          savedCategories: ensureDefaultCategory(snapshot.savedCategories),
+          savedExpressionCategoryIds: snapshot.savedExpressionCategoryIds,
+          wrongAnswerExpressionIds: uniqueExpressionIds(snapshot.wrongAnswerExpressionIds),
+          streak: snapshot.streak,
+          lastCompletedDate: snapshot.lastCompletedDate,
+          isPremium: snapshot.isPremium
         }),
       setPremium: (value) => set({ isPremium: value }),
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
@@ -296,7 +358,7 @@ export const useAppStore = create<AppStore>()(
           return {
             favoriteExpressionIds: syncFavoriteIdsFromSavedMap(savedExpressionCategoryIds),
             hasHydrated: true,
-            currentExpressionId: getTodayExpressionId(),
+            currentExpressionId: normalizeExpressionId(state.currentExpressionId),
             savedCategories: ensureDefaultCategory(state.savedCategories),
             savedExpressionCategoryIds
           };
@@ -326,11 +388,6 @@ export const useAppStore = create<AppStore>()(
   )
 );
 
-export const selectCurrentExpression = () => mockExpressions[getTodayExpressionId()];
-
-export const selectExpressionForDaysAgo = (daysAgo: number) =>
-  mockExpressions[normalizeExpressionId(getTodayExpressionId() - Math.max(0, Math.floor(daysAgo)))];
-
 export const selectSavedCategories = (state: AppStore) => ensureDefaultCategory(state.savedCategories);
 
 export const selectSavedCategoryIdsForExpression = (state: AppStore, id: number) => getSavedCategoryIds(state, id);
@@ -349,9 +406,6 @@ export const selectAllSavedExpressionIds = (state: AppStore) => {
 
   return Array.from(ids).filter((id) => Number.isFinite(id));
 };
-
-export const selectWrongAnswerExpressions = (state: AppStore) =>
-  mockExpressions.filter((expression) => state.wrongAnswerExpressionIds.includes(expression.id));
 
 export const selectSavedExpressionIdsByCategory = (state: AppStore, categoryId: string) => {
   const ids = new Set<number>();

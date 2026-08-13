@@ -3,7 +3,9 @@ import { StatusBar } from "expo-status-bar";
 
 import { AdMobProvider } from "@/ads/AdMobProvider";
 import { AuthProvider, useAuth } from "@/auth/AuthProvider";
+import { ContentProvider } from "@/content/ContentProvider";
 import { useAppStore } from "@/store/useAppStore";
+import { LearningSyncProvider } from "@/sync/LearningSyncProvider";
 import { useThemeColors } from "@/theme/useThemeColors";
 
 import { initializeKakaoSDK } from "@react-native-kakao/core";
@@ -68,7 +70,11 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootNavigator />
+      <ContentProvider>
+        <LearningSyncProvider>
+          <RootNavigator />
+        </LearningSyncProvider>
+      </ContentProvider>
     </AuthProvider>
   );
 }

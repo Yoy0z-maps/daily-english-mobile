@@ -7,11 +7,13 @@ import { signOutSocialSession } from '@/auth/socialAuth';
 import { PremiumCard } from '@/components/PremiumCard';
 import { StreakCard } from '@/components/StreakCard';
 import { useAppStore } from '@/store/useAppStore';
+import { useLearningSync } from '@/sync/LearningSyncProvider';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 
 const PROVIDER_LABELS: Record<string, string> = {
   apple: 'Apple',
+  google: 'Google',
   kakao: '카카오'
 };
 
@@ -34,6 +36,7 @@ export default function SettingsScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
   const { session } = useAuth();
+  const { status: syncStatus, errorMessage: syncErrorMessage, lastSyncedAt, syncNow } = useLearningSync();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isPremium = useAppStore((state) => state.isPremium);
   const isDarkMode = useAppStore((state) => state.isDarkMode);
@@ -45,6 +48,14 @@ export default function SettingsScreen() {
   const toggleNotifications = useAppStore((state) => state.toggleNotifications);
   const clearUserSession = useAppStore((state) => state.clearUserSession);
   const providerSummary = getProviderSummary(session);
+  const syncStatusLabel =
+    syncStatus === 'syncing'
+      ? '동기화 중…'
+      : syncStatus === 'synced'
+        ? '동기화됨'
+        : syncStatus === 'error'
+          ? '동기화 필요'
+          : '대기 중';
 
   const showMockAlert = (title: string) => {
     Alert.alert(title, 'MVP에서는 화면 이동/계정 처리를 mock으로만 표시합니다.');
@@ -126,6 +137,27 @@ export default function SettingsScreen() {
             </Text>
             {session ? <Text style={styles.accountId}>UID {session.user.id}</Text> : null}
           </View>
+          <View style={styles.syncSummary}>
+            <View style={styles.syncTextGroup}>
+              <Text style={styles.accountLabel}>학습 데이터</Text>
+              <Text style={styles.accountValue}>{syncStatusLabel}</Text>
+              {lastSyncedAt ? (
+                <Text style={styles.accountId}>
+                  마지막 동기화 {new Date(lastSyncedAt).toLocaleString('ko-KR')}
+                </Text>
+              ) : null}
+              {syncErrorMessage ? <Text style={styles.syncError}>{syncErrorMessage}</Text> : null}
+            </View>
+            <Pressable
+              style={styles.syncButton}
+              disabled={syncStatus === 'syncing'}
+              onPress={() => {
+                void syncNow();
+              }}
+            >
+              <Text style={styles.syncButtonText}>지금 동기화</Text>
+            </Pressable>
+          </View>
           <Pressable style={styles.menuRow} disabled={isSigningOut} onPress={handleSignOut}>
             <Text style={styles.menuText}>{isSigningOut ? '로그아웃 중…' : '로그아웃'}</Text>
             <Text style={styles.chevron}>›</Text>
@@ -175,6 +207,34 @@ const createStyles = (colors: AppTheme) =>
       fontSize: 15,
       fontWeight: '900',
       marginTop: 4
+    },
+    syncButton: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 10
+    },
+    syncButtonText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '900'
+    },
+    syncError: {
+      color: colors.danger,
+      fontSize: 11,
+      fontWeight: '700',
+      marginTop: 6
+    },
+    syncSummary: {
+      alignItems: 'center',
+      borderTopColor: colors.border,
+      borderTopWidth: 1,
+      flexDirection: 'row',
+      gap: 12,
+      paddingVertical: 14
+    },
+    syncTextGroup: {
+      flex: 1
     },
     chevron: {
       color: colors.textMuted,

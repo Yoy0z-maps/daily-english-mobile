@@ -5,7 +5,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ExpressionCard } from '@/components/ExpressionCard';
 import { PremiumLockCard } from '@/components/PremiumLockCard';
 import { SaveToCategoryModal } from '@/components/SaveToCategoryModal';
-import { mockExpressions } from '@/data/mockExpressions';
+import { useContent } from '@/content/ContentProvider';
 import { selectIsExpressionSaved, useAppStore } from '@/store/useAppStore';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
@@ -24,13 +24,21 @@ const getExtraExamples = (expression: EnglishExpression) => [
     sentence: expression.example,
     meaning: expression.exampleMeaning
   },
-  {
-    sentence: `${expression.sentence} I'll keep you posted.`,
-    meaning: `${expression.meaning} 진행 상황도 알려드릴게요.`
-  }
+  ...(expression.extraExamples?.length
+    ? expression.extraExamples
+    : [
+        {
+          sentence: `${expression.sentence} I'll keep you posted.`,
+          meaning: `${expression.meaning} 진행 상황도 알려드릴게요.`
+        }
+      ])
 ];
 
 const getToneTip = (expression: EnglishExpression) => {
+  if (expression.toneTip) {
+    return expression.toneTip;
+  }
+
   if (expression.category === 'Business') {
     return '업무 상황에서는 문장 끝에 “after I check”나 “by tomorrow”처럼 시간 표현을 붙이면 더 신뢰감 있게 들려요.';
   }
@@ -53,13 +61,16 @@ const getToneTip = (expression: EnglishExpression) => {
 export default function ExpressionDetailScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
+  const { expressions, getExpressionById } = useContent();
   const params = useLocalSearchParams<{ id: string }>();
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const id = Number(params.id ?? 0);
-  const expression = mockExpressions.find((item) => item.id === id) ?? mockExpressions[0];
+  const expression = getExpressionById(id) ?? expressions[0];
   const isFavorite = useAppStore((state) => selectIsExpressionSaved(state, expression.id));
   const isPremium = useAppStore((state) => state.isPremium);
-  const situations = situationByCategory[expression.category];
+  const situations = expression.usageSituations?.length
+    ? expression.usageSituations
+    : situationByCategory[expression.category];
   const extraExamples = useMemo(() => getExtraExamples(expression), [expression]);
 
   return (
@@ -108,8 +119,8 @@ export default function ExpressionDetailScreen() {
             <Text style={styles.sectionKicker}>AI Coach</Text>
             <Text style={styles.aiTitle}>AI 설명</Text>
             <Text style={styles.bodyText}>
-              “{expression.keyword}”는 문장 안에서 핵심 행동을 부드럽게 만들어주는 표현이에요. 전체 문장을
-              외운 뒤 주어와 목적어만 바꿔 말하면 실제 대화에서 바로 재사용할 수 있습니다.
+              {expression.aiExplanation ??
+                `“${expression.keyword}”는 문장 안에서 핵심 행동을 부드럽게 만들어주는 표현이에요. 전체 문장을 외운 뒤 주어와 목적어만 바꿔 말하면 실제 대화에서 바로 재사용할 수 있습니다.`}
             </Text>
             <View style={styles.patternBox}>
               <Text style={styles.patternLabel}>Pattern</Text>
