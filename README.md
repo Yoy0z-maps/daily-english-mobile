@@ -26,6 +26,10 @@ Android 네이티브 빌드는 JDK 17을 사용하세요.
 
 `ios/`와 `android/`는 Expo Prebuild가 생성하는 로컬 산출물이므로 Git에서 추적하지 않습니다. 처음 받거나 네이티브 설정이 바뀐 뒤에는 `npx expo prebuild`를 실행해 다시 생성하세요.
 
+## 주간 콘텐츠 운영
+
+LLM이 생성한 주간 콘텐츠의 검수, 수정, 승인, 반려, 게시와 Discord 알림 설정은 [`docs/CONTENT_REVIEW_AND_PUBLISH.md`](docs/CONTENT_REVIEW_AND_PUBLISH.md)를 참고하세요.
+
 ## Google AdMob
 
 개발 빌드에서는 Google 공식 테스트 광고가 표시되고, 배포 빌드에서는 아래에 설정된 실제 광고 단위가 사용됩니다.
