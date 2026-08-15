@@ -1,6 +1,6 @@
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useAppStore } from '@/store/useAppStore';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 
@@ -13,14 +13,13 @@ type PremiumLockCardProps = {
 export const PremiumLockCard = ({ title, description, buttonLabel = '프로 구독하기' }: PremiumLockCardProps) => {
   const colors = useThemeColors();
   const styles = createStyles(colors);
-  const setPremium = useAppStore((state) => state.setPremium);
 
   return (
     <View style={styles.container}>
       <Text style={styles.kicker}>Premium</Text>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
-      <Pressable style={styles.button} onPress={() => setPremium(true)}>
+      <Pressable style={styles.button} onPress={() => router.push('/(tabs)/settings')}>
         <Text style={styles.buttonText}>{buttonLabel}</Text>
       </Pressable>
     </View>

@@ -10,11 +10,17 @@
     "ios:prepare-ascii": "node scripts/prepare-ios-ascii-build.js",
     "android": "expo run:android",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest --runInBand",
+    "test:unit": "jest --runInBand tests/unit",
+    "test:integration": "jest --runInBand tests/integration",
+    "test:coverage": "jest --runInBand --coverage",
+    "test:db": "supabase test db"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/netinfo": "12.0.1",
     "@react-native-kakao/core": "^2.4.5",
     "@react-native-kakao/user": "^2.4.5",
     "@supabase/supabase-js": "^2.108.2",
@@ -40,7 +46,11 @@
     "zustand": "5.0.14"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "29.5.14",
     "@types/react": "19.2.17",
+    "jest-expo": "~56.0.5",
+    "react-test-renderer": "^19.2.3",
     "supabase": "^2.113.0",
     "typescript": "6.0.3"
   }

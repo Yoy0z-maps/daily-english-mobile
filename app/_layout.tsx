@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { AdMobProvider } from "@/ads/AdMobProvider";
 import { AuthProvider, useAuth } from "@/auth/AuthProvider";
 import { ContentProvider } from "@/content/ContentProvider";
+import { ConnectivityGate } from "@/network/ConnectivityGate";
 import { useAppStore } from "@/store/useAppStore";
 import { LearningSyncProvider } from "@/sync/LearningSyncProvider";
 import { useThemeColors } from "@/theme/useThemeColors";
@@ -16,10 +17,8 @@ function RootNavigator() {
   const colors = useThemeColors();
   const { isReady: isAuthReady, session } = useAuth();
   const hasHydrated = useAppStore((state) => state.hasHydrated);
-  const hasCompletedOnboarding = useAppStore((state) => state.hasCompletedOnboarding);
   const isDarkMode = useAppStore((state) => state.isDarkMode);
-  const canEnterHome =
-    isAuthReady && hasHydrated && hasCompletedOnboarding && session !== null;
+  const canEnterHome = isAuthReady && hasHydrated && session !== null;
   const canEnterOnboarding = isAuthReady && hasHydrated && !canEnterHome;
 
   return (
@@ -69,12 +68,14 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <ContentProvider>
-        <LearningSyncProvider>
-          <RootNavigator />
-        </LearningSyncProvider>
-      </ContentProvider>
-    </AuthProvider>
+    <ConnectivityGate>
+      <AuthProvider>
+        <ContentProvider>
+          <LearningSyncProvider>
+            <RootNavigator />
+          </LearningSyncProvider>
+        </ContentProvider>
+      </AuthProvider>
+    </ConnectivityGate>
   );
 }

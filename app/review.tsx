@@ -1,105 +1,147 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { router, Stack } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { useContent } from '@/content/ContentProvider';
+import { buildReviewOptions } from '@/learning/reviewPolicy';
+import { useAppStore } from '@/store/useAppStore';
+import { useLearningSync } from '@/sync/LearningSyncProvider';
 import {
-  DEFAULT_SAVED_CATEGORY_ID,
-  defaultSavedCategory,
-  useAppStore
-} from '@/store/useAppStore';
+  loadReviewQueue,
+  submitReviewAnswer,
+  type ReviewAnswerResult,
+  type ReviewQueueItem
+} from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
-import type { EnglishExpression } from '@/types/expression';
-
-const buildOptions = (
-  correct: EnglishExpression,
-  index: number,
-  publishedExpressions: EnglishExpression[]
-) => {
-  const distractors = publishedExpressions
-    .filter((expression) => expression.id !== correct.id)
-    .sort((a, b) => ((a.id + 3) * (index + 5)) % 17 - (((b.id + 3) * (index + 5)) % 17))
-    .slice(0, 3);
-
-  return [correct, ...distractors].sort(
-    (a, b) => ((a.id + 11) * (index + 7)) % 19 - (((b.id + 11) * (index + 7)) % 19)
-  );
-};
 
 export default function ReviewScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
   const { expressions: publishedExpressions } = useContent();
-  const params = useLocalSearchParams<{ categoryId?: string }>();
-  const categoryId = params.categoryId ?? DEFAULT_SAVED_CATEGORY_ID;
-  const recordReviewAnswer = useAppStore((state) => state.recordReviewAnswer);
-  const rawCategories = useAppStore((state) => state.savedCategories);
-  const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
-  const savedExpressionCategoryIds = useAppStore((state) => state.savedExpressionCategoryIds);
-  const categories = useMemo(() => {
-    const hasDefaultCategory = rawCategories.some((item) => item.id === DEFAULT_SAVED_CATEGORY_ID);
-    return hasDefaultCategory ? rawCategories : [defaultSavedCategory, ...rawCategories];
-  }, [rawCategories]);
-  const savedExpressionIds = useMemo(() => {
-    const ids = new Set<number>();
-
-    Object.entries(savedExpressionCategoryIds).forEach(([id, categoryIds]) => {
-      if (categoryIds.includes(categoryId)) {
-        ids.add(Number(id));
-      }
-    });
-
-    if (categoryId === DEFAULT_SAVED_CATEGORY_ID) {
-      favoriteExpressionIds.forEach((id) => ids.add(id));
-    }
-
-    return Array.from(ids).filter((id) => Number.isFinite(id));
-  }, [categoryId, favoriteExpressionIds, savedExpressionCategoryIds]);
-  const category = categories.find((item) => item.id === categoryId) ?? categories[0];
-  const expressions = useMemo(
-    () => publishedExpressions.filter((expression) => savedExpressionIds.includes(expression.id)),
-    [publishedExpressions, savedExpressionIds]
-  );
+  const { syncNow } = useLearningSync();
+  const completedExpressionIds = useAppStore((state) => state.completedExpressionIds);
+  const [queue, setQueue] = useState<ReviewQueueItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [answerResult, setAnswerResult] = useState<ReviewAnswerResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [score, setScore] = useState(0);
-  const currentExpression = expressions[currentIndex];
+
+  useEffect(() => {
+    let isActive = true;
+
+    void loadReviewQueue()
+      .then((items) => {
+        if (isActive) {
+          setQueue(items);
+          setErrorMessage(null);
+        }
+      })
+      .catch((error) => {
+        if (isActive) {
+          setErrorMessage(
+            error instanceof Error ? error.message : '복습 문제를 불러오지 못했습니다.'
+          );
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const learnedExpressions = useMemo(
+    () => publishedExpressions.filter((expression) => completedExpressionIds.includes(expression.id)),
+    [completedExpressionIds, publishedExpressions]
+  );
+  const reviewExpressions = useMemo(
+    () =>
+      queue
+        .map((item) => publishedExpressions.find((expression) => expression.id === item.expressionId))
+        .filter((expression): expression is NonNullable<typeof expression> => Boolean(expression)),
+    [publishedExpressions, queue]
+  );
+  const currentExpression = reviewExpressions[currentIndex];
+  const currentQueueItem = queue.find((item) => item.expressionId === currentExpression?.id);
   const options = useMemo(
     () =>
       currentExpression
-        ? buildOptions(currentExpression, currentIndex, publishedExpressions)
+        ? buildReviewOptions(
+            currentExpression,
+            currentIndex,
+            learnedExpressions,
+            publishedExpressions
+          )
         : [],
-    [currentExpression, currentIndex, publishedExpressions]
+    [currentExpression, currentIndex, learnedExpressions, publishedExpressions]
   );
-  const isFinished = expressions.length > 0 && currentIndex >= expressions.length;
+  const isFinished = reviewExpressions.length > 0 && currentIndex >= reviewExpressions.length;
 
-  const handleSelect = (id: number) => {
-    if (selectedId !== null || !currentExpression) {
+  const handleSelect = async (id: number) => {
+    if (selectedId !== null || !currentExpression || isSubmitting) {
       return;
     }
 
     const isCorrect = id === currentExpression.id;
-    setSelectedId(id);
-    recordReviewAnswer(currentExpression.id, isCorrect, id);
+    setIsSubmitting(true);
 
-    if (isCorrect) {
-      setScore((value) => value + 1);
+    try {
+      const result = await submitReviewAnswer(currentExpression.id, id, isCorrect);
+      setSelectedId(id);
+      setAnswerResult(result);
+
+      if (isCorrect) {
+        setScore((value) => value + 1);
+      }
+
+      await syncNow();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : '복습 결과를 저장하지 못했습니다.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleNext = () => {
     setSelectedId(null);
+    setAnswerResult(null);
+    setErrorMessage(null);
     setCurrentIndex((index) => index + 1);
   };
 
-  if (expressions.length === 0) {
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <Stack.Screen options={{ title: 'Review' }} />
         <View style={styles.emptyWrap}>
-          <Text style={styles.emptyTitle}>복습할 문장이 없어요</Text>
-          <Text style={styles.emptyText}>Saved에서 표현을 먼저 카테고리에 저장해보세요.</Text>
+          <ActivityIndicator color={colors.primary} size="large" />
+          <Text style={styles.emptyText}>오답을 우선으로 복습 문제를 준비하고 있어요.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (reviewExpressions.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Stack.Screen options={{ title: 'Review' }} />
+        <View style={styles.emptyWrap}>
+          <Text style={styles.emptyTitle}>
+            {errorMessage ? '복습 문제를 불러오지 못했어요' : '복습할 문장이 없어요'}
+          </Text>
+          <Text style={styles.emptyText}>
+            {errorMessage ?? 'Home에서 오늘 단어 학습을 먼저 완료해주세요.'}
+          </Text>
           <Pressable style={styles.primaryButton} onPress={() => router.back()}>
             <Text style={styles.primaryButtonText}>돌아가기</Text>
           </Pressable>
@@ -114,10 +156,12 @@ export default function ReviewScreen() {
         <Stack.Screen options={{ title: 'Review' }} />
         <View style={styles.emptyWrap}>
           <Text style={styles.kicker}>Review complete</Text>
-          <Text style={styles.resultTitle}>{score} / {expressions.length}</Text>
-          <Text style={styles.emptyText}>{category.name} 카테고리 복습을 마쳤어요. 틀린 표현은 다시 저장해두고 반복해봐요.</Text>
+          <Text style={styles.resultTitle}>{score} / {reviewExpressions.length}</Text>
+          <Text style={styles.emptyText}>
+            최대 5문제 복습을 마쳤어요. 틀린 표현은 자동으로 오답노트에 추가됐습니다.
+          </Text>
           <Pressable style={styles.primaryButton} onPress={() => router.back()}>
-            <Text style={styles.primaryButtonText}>Saved로 돌아가기</Text>
+            <Text style={styles.primaryButtonText}>돌아가기</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -129,9 +173,11 @@ export default function ReviewScreen() {
       <Stack.Screen options={{ title: 'Review' }} />
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.kicker}>{category.name}</Text>
+          <Text style={styles.kicker}>
+            {currentQueueItem?.isWrongNote ? '오답 우선 복습' : '학습 표현 복습'}
+          </Text>
           <Text style={styles.title}>뜻에 맞는 문장을 고르세요</Text>
-          <Text style={styles.progress}>{currentIndex + 1} / {expressions.length}</Text>
+          <Text style={styles.progress}>{currentIndex + 1} / {reviewExpressions.length}</Text>
         </View>
 
         <View style={styles.questionCard}>
@@ -148,21 +194,37 @@ export default function ReviewScreen() {
             return (
               <Pressable
                 key={option.id}
+                disabled={selectedId !== null || isSubmitting}
                 style={[styles.optionButton, isCorrect && styles.correctOption, isWrong && styles.wrongOption]}
-                onPress={() => handleSelect(option.id)}
+                onPress={() => void handleSelect(option.id)}
               >
-                <Text style={[styles.optionText, (isCorrect || isWrong) && styles.optionTextActive]}>{option.sentence}</Text>
+                <Text style={[styles.optionText, (isCorrect || isWrong) && styles.optionTextActive]}>
+                  {option.sentence}
+                </Text>
               </Pressable>
             );
           })}
         </View>
 
+        {isSubmitting ? <ActivityIndicator color={colors.primary} /> : null}
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
         {selectedId !== null ? (
           <View style={styles.feedbackCard}>
-            <Text style={styles.feedbackTitle}>{selectedId === currentExpression.id ? '정답이에요!' : '아쉽지만 괜찮아요'}</Text>
-            <Text style={styles.feedbackText}>{currentExpression.sentence} · {currentExpression.exampleMeaning}</Text>
+            <Text style={styles.feedbackTitle}>
+              {selectedId === currentExpression.id ? '정답이에요!' : '오답노트에 추가했어요'}
+            </Text>
+            <Text style={styles.feedbackText}>
+              {answerResult?.mastered
+                ? '오답을 2회 연속 맞혀 마스터했습니다.'
+                : currentQueueItem?.isWrongNote && selectedId === currentExpression.id
+                  ? `마스터까지 정답 ${2 - (answerResult?.correctStreak ?? 0)}회 남았어요.`
+                  : `${currentExpression.sentence} · ${currentExpression.exampleMeaning}`}
+            </Text>
             <Pressable style={styles.primaryButton} onPress={handleNext}>
-              <Text style={styles.primaryButtonText}>{currentIndex + 1 === expressions.length ? '결과 보기' : '다음 문제'}</Text>
+              <Text style={styles.primaryButtonText}>
+                {currentIndex + 1 === reviewExpressions.length ? '결과 보기' : '다음 문제'}
+              </Text>
             </Pressable>
           </View>
         ) : null}
@@ -173,151 +235,30 @@ export default function ReviewScreen() {
 
 const createStyles = (colors: AppTheme) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      gap: 18,
-      padding: 20
-    },
-    correctOption: {
-      backgroundColor: colors.success,
-      borderColor: colors.success
-    },
-    emptyText: {
-      color: colors.textMuted,
-      fontSize: 16,
-      fontWeight: '700',
-      lineHeight: 24,
-      marginTop: 10,
-      textAlign: 'center'
-    },
-    emptyTitle: {
-      color: colors.text,
-      fontSize: 26,
-      fontWeight: '900',
-      letterSpacing: -0.7,
-      textAlign: 'center'
-    },
-    emptyWrap: {
-      alignItems: 'center',
-      flex: 1,
-      justifyContent: 'center',
-      padding: 24
-    },
-    feedbackCard: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: 26,
-      borderWidth: 1,
-      padding: 18
-    },
-    feedbackText: {
-      color: colors.textMuted,
-      fontSize: 15,
-      fontWeight: '700',
-      lineHeight: 23,
-      marginBottom: 16,
-      marginTop: 8
-    },
-    feedbackTitle: {
-      color: colors.text,
-      fontSize: 20,
-      fontWeight: '900'
-    },
-    header: {
-      marginTop: 8
-    },
-    keywordHint: {
-      color: colors.primary,
-      fontSize: 14,
-      fontWeight: '900',
-      marginTop: 14
-    },
-    kicker: {
-      color: colors.primary,
-      fontSize: 13,
-      fontWeight: '900',
-      letterSpacing: 0.8,
-      textTransform: 'uppercase'
-    },
-    optionButton: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
-      borderRadius: 22,
-      borderWidth: 1,
-      padding: 17
-    },
-    optionText: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '900',
-      lineHeight: 23
-    },
-    optionTextActive: {
-      color: '#FFFFFF'
-    },
-    options: {
-      gap: 12
-    },
-    primaryButton: {
-      alignItems: 'center',
-      backgroundColor: colors.primary,
-      borderRadius: 20,
-      marginTop: 18,
-      paddingHorizontal: 28,
-      paddingVertical: 15
-    },
-    primaryButtonText: {
-      color: '#FFFFFF',
-      fontSize: 16,
-      fontWeight: '900'
-    },
-    progress: {
-      color: colors.textMuted,
-      fontSize: 14,
-      fontWeight: '900',
-      marginTop: 10
-    },
-    questionCard: {
-      backgroundColor: colors.primarySoft,
-      borderRadius: 30,
-      padding: 22
-    },
-    questionLabel: {
-      color: colors.primary,
-      fontSize: 12,
-      fontWeight: '900',
-      letterSpacing: 0.8,
-      textTransform: 'uppercase'
-    },
-    questionText: {
-      color: colors.text,
-      fontSize: 27,
-      fontWeight: '900',
-      letterSpacing: -0.7,
-      lineHeight: 35,
-      marginTop: 12
-    },
-    resultTitle: {
-      color: colors.text,
-      fontSize: 56,
-      fontWeight: '900',
-      letterSpacing: -1.5,
-      marginTop: 8
-    },
-    safeArea: {
-      backgroundColor: colors.background,
-      flex: 1
-    },
-    title: {
-      color: colors.text,
-      fontSize: 31,
-      fontWeight: '900',
-      letterSpacing: -1,
-      lineHeight: 38,
-      marginTop: 6
-    },
-    wrongOption: {
-      backgroundColor: colors.danger,
-      borderColor: colors.danger
-    }
+    container: { flex: 1, gap: 18, padding: 20 },
+    correctOption: { backgroundColor: colors.success, borderColor: colors.success },
+    emptyText: { color: colors.textMuted, fontSize: 16, fontWeight: '700', lineHeight: 24, marginTop: 10, textAlign: 'center' },
+    emptyTitle: { color: colors.text, fontSize: 26, fontWeight: '900', letterSpacing: -0.7, textAlign: 'center' },
+    emptyWrap: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 24 },
+    errorText: { color: colors.danger, fontSize: 13, fontWeight: '800', textAlign: 'center' },
+    feedbackCard: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 26, borderWidth: 1, padding: 18 },
+    feedbackText: { color: colors.textMuted, fontSize: 15, fontWeight: '700', lineHeight: 23, marginBottom: 16, marginTop: 8 },
+    feedbackTitle: { color: colors.text, fontSize: 20, fontWeight: '900' },
+    header: { marginTop: 8 },
+    keywordHint: { color: colors.primary, fontSize: 14, fontWeight: '900', marginTop: 14 },
+    kicker: { color: colors.primary, fontSize: 13, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase' },
+    optionButton: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 22, borderWidth: 1, padding: 17 },
+    optionText: { color: colors.text, fontSize: 16, fontWeight: '900', lineHeight: 23 },
+    optionTextActive: { color: '#FFFFFF' },
+    options: { gap: 12 },
+    primaryButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: 18, marginTop: 18, paddingHorizontal: 18, paddingVertical: 14 },
+    primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
+    progress: { color: colors.textMuted, fontSize: 14, fontWeight: '800', marginTop: 7 },
+    questionCard: { backgroundColor: colors.primarySoft, borderRadius: 28, padding: 22 },
+    questionLabel: { color: colors.primary, fontSize: 12, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase' },
+    questionText: { color: colors.text, fontSize: 23, fontWeight: '900', lineHeight: 32, marginTop: 10 },
+    resultTitle: { color: colors.primary, fontSize: 44, fontWeight: '900', marginTop: 12 },
+    safeArea: { backgroundColor: colors.background, flex: 1 },
+    title: { color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.6, marginTop: 6 },
+    wrongOption: { backgroundColor: colors.danger, borderColor: colors.danger }
   });

@@ -5,6 +5,7 @@ import { useRewardedAd } from 'react-native-google-mobile-ads';
 
 import { useAdMob } from '@/ads/AdMobProvider';
 import { rewardedAdUnitId } from '@/ads/adUnits';
+import { useAuth } from '@/auth/AuthProvider';
 import { ExpressionCard } from '@/components/ExpressionCard';
 import { useContent } from '@/content/ContentProvider';
 import {
@@ -12,6 +13,11 @@ import {
   defaultSavedCategory,
   useAppStore
 } from '@/store/useAppStore';
+import { useLearningSync } from '@/sync/LearningSyncProvider';
+import {
+  createCloudCategory,
+  removeContentFromCategory
+} from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 
@@ -19,17 +25,19 @@ export default function SavedScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
   const { expressions: publishedExpressions } = useContent();
+  const { session } = useAuth();
+  const { syncNow } = useLearningSync();
   const { isReady: isAdMobReady } = useAdMob();
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_SAVED_CATEGORY_ID);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isMutating, setIsMutating] = useState(false);
   const rawCategories = useAppStore((state) => state.savedCategories);
   const isPremium = useAppStore((state) => state.isPremium);
   const wrongAnswerCount = useAppStore((state) => state.wrongAnswerExpressionIds.length);
+  const totalCompleted = useAppStore((state) => state.totalCompleted);
   const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
   const savedExpressionCategoryIds = useAppStore((state) => state.savedExpressionCategoryIds);
-  const createSavedCategory = useAppStore((state) => state.createSavedCategory);
-  const removeExpressionFromCategory = useAppStore((state) => state.removeExpressionFromCategory);
   const categories = useMemo(() => {
     const hasDefaultCategory = rawCategories.some((category) => category.id === DEFAULT_SAVED_CATEGORY_ID);
     return hasDefaultCategory ? rawCategories : [defaultSavedCategory, ...rawCategories];
@@ -72,7 +80,7 @@ export default function SavedScreen() {
     pendingReviewCategoryId.current = null;
 
     if (rewardedAd.isEarnedReward && categoryId) {
-      router.push({ pathname: '/review', params: { categoryId } });
+      router.push('/review');
     }
 
     if (!isPremium && isAdMobReady) {
@@ -97,21 +105,60 @@ export default function SavedScreen() {
     }
   }, [isAdMobReady, isPremium, rewardedAd.error, rewardedAd.load]);
 
-  const handleCreateCategory = () => {
-    const categoryId = createSavedCategory(newCategoryName);
-    setSelectedCategoryId(categoryId);
-    setNewCategoryName('');
-    setIsCreateModalVisible(false);
+  const handleCreateCategory = async () => {
+    if (!session || isMutating) {
+      return;
+    }
+
+    setIsMutating(true);
+    try {
+      const categoryId = await createCloudCategory(session.user.id, newCategoryName);
+      await syncNow();
+      setSelectedCategoryId(categoryId);
+      setNewCategoryName('');
+      setIsCreateModalVisible(false);
+    } catch (error) {
+      Alert.alert(
+        '카테고리 생성 실패',
+        error instanceof Error ? error.message : '카테고리를 만들지 못했습니다.'
+      );
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleRemoveExpression = async (expressionId: number) => {
+    if (!session || isMutating) {
+      return;
+    }
+
+    setIsMutating(true);
+    try {
+      await removeContentFromCategory(
+        session.user.id,
+        expressionId,
+        selectedCategoryId,
+        categories
+      );
+      await syncNow();
+    } catch (error) {
+      Alert.alert(
+        '저장 해제 실패',
+        error instanceof Error ? error.message : '저장 위치를 변경하지 못했습니다.'
+      );
+    } finally {
+      setIsMutating(false);
+    }
   };
 
   const handleReviewPress = () => {
-    if (expressions.length === 0) {
-      Alert.alert('복습할 문장이 없어요', '먼저 Home에서 문장을 저장해주세요.');
+    if (totalCompleted === 0) {
+      Alert.alert('복습할 문장이 없어요', '먼저 Home에서 오늘 단어 학습을 완료해주세요.');
       return;
     }
 
     if (isPremium) {
-      router.push({ pathname: '/review', params: { categoryId: selectedCategoryId } });
+      router.push('/review');
       return;
     }
 
@@ -191,7 +238,7 @@ export default function SavedScreen() {
               expression={expression}
               isFavorite
               saveLabel="이 카테고리에서 제거"
-              onFavoritePress={() => removeExpressionFromCategory(expression.id, selectedCategoryId)}
+              onFavoritePress={() => void handleRemoveExpression(expression.id)}
               onOpenDetail={() =>
                 router.push({
                   pathname: '/expression/[id]',
@@ -215,8 +262,14 @@ export default function SavedScreen() {
               placeholderTextColor={colors.textMuted}
               style={styles.input}
             />
-            <Pressable style={styles.modalButton} onPress={handleCreateCategory}>
-              <Text style={styles.modalButtonText}>카테고리 추가</Text>
+            <Pressable
+              style={styles.modalButton}
+              disabled={isMutating}
+              onPress={() => void handleCreateCategory()}
+            >
+              <Text style={styles.modalButtonText}>
+                {isMutating ? '추가 중…' : '카테고리 추가'}
+              </Text>
             </Pressable>
           </View>
         </View>

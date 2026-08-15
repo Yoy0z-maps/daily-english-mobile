@@ -5,10 +5,11 @@ import { useThemeColors } from '@/theme/useThemeColors';
 
 type StreakCardProps = {
   streak: number;
+  longestStreak: number;
   completedCount: number;
 };
 
-export const StreakCard = ({ streak, completedCount }: StreakCardProps) => {
+export const StreakCard = ({ streak, longestStreak, completedCount }: StreakCardProps) => {
   const colors = useThemeColors();
   const styles = createStyles(colors);
 
@@ -20,7 +21,12 @@ export const StreakCard = ({ streak, completedCount }: StreakCardProps) => {
       </View>
       <View style={styles.divider} />
       <View style={styles.statBlock}>
-        <Text style={styles.label}>배운 표현</Text>
+        <Text style={styles.label}>최장 연속</Text>
+        <Text style={styles.value}>{longestStreak}일</Text>
+      </View>
+      <View style={styles.divider} />
+      <View style={styles.statBlock}>
+        <Text style={styles.label}>총 학습</Text>
         <Text style={styles.value}>{completedCount}개</Text>
       </View>
     </View>

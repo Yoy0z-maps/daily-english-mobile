@@ -1,8 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { supabase } from '@/lib/supabase';
 
-const OPERATION_QUEUE_KEY = 'daily-english-learning-operation-queue-v1';
 const DEFAULT_CATEGORY_ID = 'default';
 const DEFAULT_CATEGORY_NAME = '기본';
 
@@ -20,28 +17,22 @@ export type LearningStateSnapshot = {
   savedExpressionCategoryIds: Record<string, string[]>;
   wrongAnswerExpressionIds: number[];
   streak: number;
+  longestStreak: number;
+  totalCompleted: number;
   lastCompletedDate: string | null;
   isPremium: boolean;
 };
 
-export type LearningOperationInput =
-  | { type: 'complete_content'; expressionId: number }
-  | { type: 'create_category'; categoryName: string }
-  | { type: 'save_to_category'; expressionId: number; categoryName: string }
-  | { type: 'remove_from_category'; expressionId: number; categoryName: string }
-  | {
-      type: 'record_review';
-      expressionId: number;
-      selectedExpressionId: number | null;
-      isCorrect: boolean;
-    }
-  | { type: 'remove_wrong_note'; expressionId: number }
-  | { type: 'clear_wrong_notes' };
+export type ReviewQueueItem = {
+  expressionId: number;
+  isWrongNote: boolean;
+  correctStreak: number;
+};
 
-type PendingLearningOperation = LearningOperationInput & {
-  id: string;
-  userId: string;
-  createdAt: string;
+export type ReviewAnswerResult = {
+  wrongNoteStatus: 'active' | 'mastered' | 'none';
+  correctStreak: number;
+  mastered: boolean;
 };
 
 type ContentRow = {
@@ -61,51 +52,34 @@ type FavoriteRow = {
 };
 
 type FavoriteItemRow = {
-  id: number;
   favorite_id: number;
   category_id: number;
 };
 
-let queueLock: Promise<unknown> = Promise.resolve();
-let operationSequence = 0;
+type LearningDashboardRow = {
+  current_content_index: number | null;
+  streak: number;
+  longest_streak: number;
+  total_completed: number;
+  last_completed_date: string | null;
+};
 
-const withQueueLock = <T>(task: () => Promise<T>) => {
-  const result = queueLock.then(task, task);
-  queueLock = result.then(
-    () => undefined,
-    () => undefined
-  );
-  return result;
+type ReviewQueueRow = {
+  content_index: number;
+  is_wrong_note: boolean;
+  correct_streak: number;
+};
+
+type ReviewAnswerRow = {
+  wrong_note_status: string;
+  correct_streak: number;
+  mastered: boolean;
 };
 
 const throwIfError = (error: { message: string } | null) => {
   if (error) {
     throw new Error(error.message);
   }
-};
-
-const readOperationQueue = async () => {
-  const savedQueue = await AsyncStorage.getItem(OPERATION_QUEUE_KEY);
-
-  if (!savedQueue) {
-    return [] as PendingLearningOperation[];
-  }
-
-  try {
-    const parsed = JSON.parse(savedQueue);
-    return Array.isArray(parsed) ? (parsed as PendingLearningOperation[]) : [];
-  } catch {
-    return [] as PendingLearningOperation[];
-  }
-};
-
-const writeOperationQueue = async (queue: PendingLearningOperation[]) => {
-  if (queue.length === 0) {
-    await AsyncStorage.removeItem(OPERATION_QUEUE_KEY);
-    return;
-  }
-
-  await AsyncStorage.setItem(OPERATION_QUEUE_KEY, JSON.stringify(queue));
 };
 
 const loadContentRows = async () => {
@@ -123,12 +97,10 @@ const buildContentMaps = (rows: ContentRow[]) => {
   const expressionIdByDatabaseId = new Map<number, number>();
 
   rows.forEach((row) => {
-    if (row.content_index === null) {
-      return;
+    if (row.content_index !== null) {
+      databaseIdByExpressionId.set(row.content_index, row.id);
+      expressionIdByDatabaseId.set(row.id, row.content_index);
     }
-
-    databaseIdByExpressionId.set(row.content_index, row.id);
-    expressionIdByDatabaseId.set(row.id, row.content_index);
   });
 
   return { databaseIdByExpressionId, expressionIdByDatabaseId };
@@ -151,6 +123,19 @@ const requireContentDatabaseId = async (expressionId: number) => {
   return data.id as number;
 };
 
+const toLocalCategoryId = (category: CategoryRow) =>
+  category.name === DEFAULT_CATEGORY_NAME ? DEFAULT_CATEGORY_ID : `cloud-category-${category.id}`;
+
+const getCategoryName = (categoryId: string, categories: SyncedSavedCategory[]) => {
+  const name = categories.find((category) => category.id === categoryId)?.name;
+
+  if (!name) {
+    throw new Error('저장 카테고리를 찾지 못했습니다. 다시 동기화해주세요.');
+  }
+
+  return name;
+};
+
 const ensureCategory = async (userId: string, categoryName: string) => {
   const { data, error } = await supabase
     .from('favorite_categories')
@@ -162,7 +147,7 @@ const ensureCategory = async (userId: string, categoryName: string) => {
       },
       { onConflict: 'user_id,name' }
     )
-    .select('id')
+    .select('id, name, created_at')
     .single();
 
   throwIfError(error);
@@ -171,7 +156,7 @@ const ensureCategory = async (userId: string, categoryName: string) => {
     throw new Error('Supabase 저장 카테고리를 만들지 못했습니다.');
   }
 
-  return data.id as number;
+  return data as CategoryRow;
 };
 
 const ensureFavorite = async (userId: string, contentId: number) => {
@@ -190,216 +175,23 @@ const ensureFavorite = async (userId: string, contentId: number) => {
   return data.id as number;
 };
 
-const executeLearningOperation = async (operation: PendingLearningOperation) => {
-  switch (operation.type) {
-    case 'complete_content': {
-      const contentId = await requireContentDatabaseId(operation.expressionId);
-      const { data, error } = await supabase.rpc('complete_current_content', {
-        p_content_id: contentId
-      });
-
-      throwIfError(error);
-
-      if (data !== true) {
-        console.warn('현재 학습 순서와 완료하려는 문장이 달라 완료 요청을 건너뜁니다.');
-      }
-      return;
-    }
-    case 'create_category': {
-      await ensureCategory(operation.userId, operation.categoryName);
-      return;
-    }
-    case 'save_to_category': {
-      const contentId = await requireContentDatabaseId(operation.expressionId);
-      const [categoryId, favoriteId] = await Promise.all([
-        ensureCategory(operation.userId, operation.categoryName),
-        ensureFavorite(operation.userId, contentId)
-      ]);
-      const { error } = await supabase
-        .from('favorite_category_items')
-        .upsert(
-          { favorite_id: favoriteId, category_id: categoryId },
-          { onConflict: 'favorite_id,category_id', ignoreDuplicates: true }
-        );
-
-      throwIfError(error);
-      return;
-    }
-    case 'remove_from_category': {
-      const contentId = await requireContentDatabaseId(operation.expressionId);
-      const [{ data: category, error: categoryError }, { data: favorite, error: favoriteError }] =
-        await Promise.all([
-          supabase
-            .from('favorite_categories')
-            .select('id')
-            .eq('user_id', operation.userId)
-            .eq('name', operation.categoryName)
-            .maybeSingle(),
-          supabase
-            .from('favorites')
-            .select('id')
-            .eq('user_id', operation.userId)
-            .eq('content_id', contentId)
-            .maybeSingle()
-        ]);
-
-      throwIfError(categoryError);
-      throwIfError(favoriteError);
-
-      if (!favorite) {
-        return;
-      }
-
-      if (category) {
-        const { error } = await supabase
-          .from('favorite_category_items')
-          .delete()
-          .eq('favorite_id', favorite.id)
-          .eq('category_id', category.id);
-        throwIfError(error);
-      }
-
-      const { data: remainingItems, error: remainingItemsError } = await supabase
-        .from('favorite_category_items')
-        .select('id')
-        .eq('favorite_id', favorite.id)
-        .limit(1);
-
-      throwIfError(remainingItemsError);
-
-      if ((remainingItems ?? []).length === 0) {
-        const { error } = await supabase
-          .from('favorites')
-          .delete()
-          .eq('user_id', operation.userId)
-          .eq('id', favorite.id);
-        throwIfError(error);
-      }
-      return;
-    }
-    case 'record_review': {
-      const contentId = await requireContentDatabaseId(operation.expressionId);
-      const selectedContentId =
-        operation.selectedExpressionId === null
-          ? null
-          : await requireContentDatabaseId(operation.selectedExpressionId);
-      const { error } = await supabase.from('review_attempts').insert({
-        user_id: operation.userId,
-        content_id: contentId,
-        selected_content_id: selectedContentId,
-        is_correct: operation.isCorrect,
-        answered_at: operation.createdAt
-      });
-
-      throwIfError(error);
-
-      if (operation.isCorrect) {
-        const { error: deleteError } = await supabase
-          .from('wrong_notes')
-          .delete()
-          .eq('user_id', operation.userId)
-          .eq('content_id', contentId);
-        throwIfError(deleteError);
-      }
-      return;
-    }
-    case 'remove_wrong_note': {
-      const contentId = await requireContentDatabaseId(operation.expressionId);
-      const { error } = await supabase
-        .from('wrong_notes')
-        .delete()
-        .eq('user_id', operation.userId)
-        .eq('content_id', contentId);
-      throwIfError(error);
-      return;
-    }
-    case 'clear_wrong_notes': {
-      const { error } = await supabase.from('wrong_notes').delete().eq('user_id', operation.userId);
-      throwIfError(error);
-    }
-  }
-};
-
-export const enqueueLearningOperation = async (input: LearningOperationInput) => {
-  try {
-    const {
-      data: { session }
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      return;
-    }
-
-    const operation: PendingLearningOperation = {
-      ...input,
-      id: `${Date.now()}-${operationSequence++}`,
-      userId: session.user.id,
-      createdAt: new Date().toISOString()
-    };
-
-    await withQueueLock(async () => {
-      const queue = await readOperationQueue();
-      await writeOperationQueue([...queue, operation]);
-    });
-
-    await flushPendingLearningOperations(session.user.id);
-  } catch (error) {
-    console.warn('학습 변경 사항을 동기화 대기열에 저장하지 못했습니다.', error);
-  }
-};
-
-export const flushPendingLearningOperations = async (userId: string) =>
-  withQueueLock(async () => {
-    const queue = await readOperationQueue();
-    const remaining: PendingLearningOperation[] = [];
-    let firstError: unknown = null;
-
-    for (let index = 0; index < queue.length; index += 1) {
-      const operation = queue[index];
-
-      if (operation.userId !== userId || firstError) {
-        remaining.push(operation);
-        continue;
-      }
-
-      try {
-        await executeLearningOperation(operation);
-      } catch (error) {
-        firstError = error;
-        remaining.push(operation, ...queue.slice(index + 1));
-        break;
-      }
-    }
-
-    await writeOperationQueue(remaining);
-
-    if (firstError) {
-      throw firstError;
-    }
-  });
-
 export const loadCloudLearningState = async (userId: string): Promise<LearningStateSnapshot> => {
   const [
     contentResult,
     profileResult,
-    progressResult,
+    dashboardResult,
     learningLogResult,
     categoryResult,
     favoriteResult,
     favoriteItemResult,
-    wrongNoteResult,
-    currentContentResult
+    wrongNoteResult
   ] = await Promise.all([
     supabase.from('contents').select('id, content_index').eq('status', 'published'),
     supabase.from('profiles').select('is_premium').eq('id', userId).maybeSingle(),
-    supabase
-      .from('user_progress')
-      .select('streak, last_completed_date')
-      .eq('user_id', userId)
-      .maybeSingle(),
+    supabase.rpc('get_learning_dashboard').maybeSingle(),
     supabase
       .from('learning_logs')
-      .select('content_index, completed_date')
+      .select('content_index')
       .eq('user_id', userId)
       .order('completed_date'),
     supabase
@@ -409,21 +201,19 @@ export const loadCloudLearningState = async (userId: string): Promise<LearningSt
       .order('sort_order')
       .order('created_at'),
     supabase.from('favorites').select('id, content_id').eq('user_id', userId),
-    supabase.from('favorite_category_items').select('id, favorite_id, category_id'),
-    supabase.from('wrong_notes').select('content_id').eq('user_id', userId).eq('status', 'active'),
-    supabase.rpc('get_current_content_id')
+    supabase.from('favorite_category_items').select('favorite_id, category_id'),
+    supabase.from('wrong_notes').select('content_id').eq('user_id', userId).eq('status', 'active')
   ]);
 
   [
     contentResult,
     profileResult,
-    progressResult,
+    dashboardResult,
     learningLogResult,
     categoryResult,
     favoriteResult,
     favoriteItemResult,
-    wrongNoteResult,
-    currentContentResult
+    wrongNoteResult
   ].forEach((result) => throwIfError(result.error));
 
   const { expressionIdByDatabaseId } = buildContentMaps((contentResult.data ?? []) as ContentRow[]);
@@ -431,12 +221,10 @@ export const loadCloudLearningState = async (userId: string): Promise<LearningSt
   const favorites = (favoriteResult.data ?? []) as FavoriteRow[];
   const favoriteItems = (favoriteItemResult.data ?? []) as FavoriteItemRow[];
   const localCategoryIdByDatabaseId = new Map<number, string>();
-  const savedCategories: SyncedSavedCategory[] = [];
-
-  categories.forEach((category) => {
-    const localId = category.name === DEFAULT_CATEGORY_NAME ? DEFAULT_CATEGORY_ID : `cloud-category-${category.id}`;
-    localCategoryIdByDatabaseId.set(category.id, localId);
-    savedCategories.push({ id: localId, name: category.name, createdAt: category.created_at });
+  const savedCategories = categories.map((category) => {
+    const id = toLocalCategoryId(category);
+    localCategoryIdByDatabaseId.set(category.id, id);
+    return { id, name: category.name, createdAt: category.created_at };
   });
 
   if (!savedCategories.some((category) => category.id === DEFAULT_CATEGORY_ID)) {
@@ -450,319 +238,193 @@ export const loadCloudLearningState = async (userId: string): Promise<LearningSt
   const itemsByFavoriteId = new Map<number, string[]>();
   favoriteItems.forEach((item) => {
     const categoryId = localCategoryIdByDatabaseId.get(item.category_id);
-
-    if (!categoryId) {
-      return;
+    if (categoryId) {
+      itemsByFavoriteId.set(item.favorite_id, [
+        ...(itemsByFavoriteId.get(item.favorite_id) ?? []),
+        categoryId
+      ]);
     }
-
-    itemsByFavoriteId.set(item.favorite_id, [
-      ...(itemsByFavoriteId.get(item.favorite_id) ?? []),
-      categoryId
-    ]);
   });
 
   const savedExpressionCategoryIds: Record<string, string[]> = {};
   favorites.forEach((favorite) => {
     const expressionId = expressionIdByDatabaseId.get(favorite.content_id);
-
-    if (expressionId === undefined) {
-      return;
+    if (expressionId !== undefined) {
+      savedExpressionCategoryIds[String(expressionId)] =
+        itemsByFavoriteId.get(favorite.id) ?? [DEFAULT_CATEGORY_ID];
     }
-
-    savedExpressionCategoryIds[String(expressionId)] =
-      itemsByFavoriteId.get(favorite.id) ?? [DEFAULT_CATEGORY_ID];
   });
 
-  const currentContentDatabaseId = Number(currentContentResult.data);
-  const currentExpressionId = Number.isFinite(currentContentDatabaseId)
-    ? expressionIdByDatabaseId.get(currentContentDatabaseId) ?? 0
-    : 0;
+  const dashboard = dashboardResult.data as LearningDashboardRow | null;
 
   return {
-    currentExpressionId,
+    currentExpressionId: Number(dashboard?.current_content_index ?? 0),
     completedExpressionIds: (learningLogResult.data ?? [])
-      .map((log) => log.content_index as number)
-      .filter((id) => Number.isFinite(id)),
+      .map((log) => Number(log.content_index))
+      .filter(Number.isFinite),
     favoriteExpressionIds: Object.keys(savedExpressionCategoryIds).map(Number),
     savedCategories,
     savedExpressionCategoryIds,
     wrongAnswerExpressionIds: (wrongNoteResult.data ?? [])
-      .map((note) => expressionIdByDatabaseId.get(note.content_id as number))
+      .map((note) => expressionIdByDatabaseId.get(Number(note.content_id)))
       .filter((id): id is number => id !== undefined),
-    streak: progressResult.data?.streak ?? 0,
-    lastCompletedDate: progressResult.data?.last_completed_date ?? null,
+    streak: Number(dashboard?.streak ?? 0),
+    longestStreak: Number(dashboard?.longest_streak ?? 0),
+    totalCompleted: Number(dashboard?.total_completed ?? 0),
+    lastCompletedDate: dashboard?.last_completed_date ?? null,
     isPremium: profileResult.data?.is_premium ?? false
   };
 };
 
-const uniqueNumbers = (values: number[]) => Array.from(new Set(values.filter(Number.isFinite)));
-const uniqueStrings = (values: string[]) => Array.from(new Set(values));
-
-export const mergeLearningStates = (
-  local: LearningStateSnapshot,
-  cloud: LearningStateSnapshot
-): LearningStateSnapshot => {
-  const mergedCategories: SyncedSavedCategory[] = [];
-  const mergedCategoryIdByName = new Map<string, string>();
-
-  [...cloud.savedCategories, ...local.savedCategories].forEach((category) => {
-    if (mergedCategoryIdByName.has(category.name)) {
-      return;
-    }
-
-    const id = category.name === DEFAULT_CATEGORY_NAME ? DEFAULT_CATEGORY_ID : category.id;
-    mergedCategoryIdByName.set(category.name, id);
-    mergedCategories.push({ ...category, id });
-  });
-
-  const addSavedMap = (
-    source: LearningStateSnapshot,
-    target: Record<string, string[]>
-  ) => {
-    const categoryNameById = new Map(source.savedCategories.map((category) => [category.id, category.name]));
-
-    Object.entries(source.savedExpressionCategoryIds).forEach(([expressionId, categoryIds]) => {
-      const mappedIds = categoryIds
-        .map((categoryId) => categoryNameById.get(categoryId))
-        .map((name) => (name ? mergedCategoryIdByName.get(name) : undefined))
-        .filter((id): id is string => id !== undefined);
-      target[expressionId] = uniqueStrings([...(target[expressionId] ?? []), ...mappedIds]);
-    });
-  };
-
-  const savedExpressionCategoryIds: Record<string, string[]> = {};
-  addSavedMap(cloud, savedExpressionCategoryIds);
-  addSavedMap(local, savedExpressionCategoryIds);
-
-  uniqueNumbers([...cloud.favoriteExpressionIds, ...local.favoriteExpressionIds]).forEach((expressionId) => {
-    const key = String(expressionId);
-    if (!savedExpressionCategoryIds[key] || savedExpressionCategoryIds[key].length === 0) {
-      savedExpressionCategoryIds[key] = [DEFAULT_CATEGORY_ID];
-    }
-  });
-
-  const cloudDate = cloud.lastCompletedDate ?? '';
-  const localDate = local.lastCompletedDate ?? '';
-
-  return {
-    currentExpressionId: cloud.currentExpressionId,
-    completedExpressionIds: uniqueNumbers([
-      ...cloud.completedExpressionIds,
-      ...local.completedExpressionIds
-    ]),
-    favoriteExpressionIds: Object.keys(savedExpressionCategoryIds).map(Number).filter(Number.isFinite),
-    savedCategories: mergedCategories,
-    savedExpressionCategoryIds,
-    wrongAnswerExpressionIds: uniqueNumbers([
-      ...cloud.wrongAnswerExpressionIds,
-      ...local.wrongAnswerExpressionIds
-    ]),
-    streak:
-      cloudDate > localDate
-        ? cloud.streak
-        : localDate > cloudDate
-          ? local.streak
-          : Math.max(cloud.streak, local.streak),
-    lastCompletedDate: cloudDate > localDate ? cloud.lastCompletedDate : local.lastCompletedDate,
-    isPremium: local.isPremium
-  };
-};
-
-const getLocalDateKey = () => {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-export const pushPendingTodayCompletion = async (
-  local: LearningStateSnapshot,
-  cloud: LearningStateSnapshot
-) => {
-  const today = getLocalDateKey();
-
-  if (
-    local.lastCompletedDate !== today ||
-    cloud.lastCompletedDate === today ||
-    local.currentExpressionId !== cloud.currentExpressionId ||
-    !local.completedExpressionIds.includes(local.currentExpressionId)
-  ) {
-    return false;
-  }
-
-  const contentId = await requireContentDatabaseId(local.currentExpressionId);
+export const completeCurrentContent = async (expressionId: number) => {
+  const contentId = await requireContentDatabaseId(expressionId);
   const { data, error } = await supabase.rpc('complete_current_content', {
     p_content_id: contentId
   });
+
   throwIfError(error);
-  return data === true;
+
+  if (data !== true) {
+    throw new Error('현재 학습 순서와 완료하려는 문장이 다릅니다. 다시 동기화해주세요.');
+  }
 };
 
-export const pushLibrarySnapshot = async (userId: string, snapshot: LearningStateSnapshot) => {
-  const contentRows = await loadContentRows();
-  const { databaseIdByExpressionId, expressionIdByDatabaseId } = buildContentMaps(contentRows);
-  const categories = snapshot.savedCategories.some((category) => category.name === DEFAULT_CATEGORY_NAME)
-    ? snapshot.savedCategories
-    : [
-        {
-          id: DEFAULT_CATEGORY_ID,
-          name: DEFAULT_CATEGORY_NAME,
-          createdAt: '2026-01-01T00:00:00.000Z'
-        },
-        ...snapshot.savedCategories
-      ];
-  const uniqueCategories = Array.from(new Map(categories.map((category) => [category.name, category])).values());
-  const { data: cloudCategories, error: categoryError } = await supabase
-    .from('favorite_categories')
-    .upsert(
-      uniqueCategories.map((category, index) => ({
-        user_id: userId,
-        name: category.name,
-        sort_order: category.name === DEFAULT_CATEGORY_NAME ? -100 : index
-      })),
-      { onConflict: 'user_id,name' }
-    )
-    .select('id, name');
+export const createCloudCategory = async (userId: string, name: string) => {
+  const trimmedName = name.trim();
+
+  if (!trimmedName) {
+    throw new Error('카테고리 이름을 입력해주세요.');
+  }
+
+  const category = await ensureCategory(userId, trimmedName);
+  return toLocalCategoryId(category);
+};
+
+export const saveContentToCategory = async (
+  userId: string,
+  expressionId: number,
+  categoryId: string,
+  categories: SyncedSavedCategory[]
+) => {
+  const [contentId, category] = await Promise.all([
+    requireContentDatabaseId(expressionId),
+    ensureCategory(userId, getCategoryName(categoryId, categories))
+  ]);
+  const favoriteId = await ensureFavorite(userId, contentId);
+  const { error } = await supabase.from('favorite_category_items').upsert(
+    { favorite_id: favoriteId, category_id: category.id },
+    { onConflict: 'favorite_id,category_id', ignoreDuplicates: true }
+  );
+
+  throwIfError(error);
+};
+
+export const removeContentFromCategory = async (
+  userId: string,
+  expressionId: number,
+  categoryId: string,
+  categories: SyncedSavedCategory[]
+) => {
+  const contentId = await requireContentDatabaseId(expressionId);
+  const categoryName = getCategoryName(categoryId, categories);
+  const [{ data: category, error: categoryError }, { data: favorite, error: favoriteError }] =
+    await Promise.all([
+      supabase
+        .from('favorite_categories')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('name', categoryName)
+        .maybeSingle(),
+      supabase
+        .from('favorites')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('content_id', contentId)
+        .maybeSingle()
+    ]);
 
   throwIfError(categoryError);
+  throwIfError(favoriteError);
 
-  const categoryDatabaseIdByLocalId = new Map<string, number>();
-  const categoryDatabaseIdByName = new Map(
-    (cloudCategories ?? []).map((category) => [category.name as string, category.id as number])
-  );
-  categories.forEach((category) => {
-    const databaseId = categoryDatabaseIdByName.get(category.name);
-    if (databaseId !== undefined) {
-      categoryDatabaseIdByLocalId.set(category.id, databaseId);
-    }
-  });
-
-  const desiredExpressionIds = uniqueNumbers([
-    ...snapshot.favoriteExpressionIds,
-    ...Object.keys(snapshot.savedExpressionCategoryIds).map(Number)
-  ]).filter((expressionId) => databaseIdByExpressionId.has(expressionId));
-  const favoriteRows = desiredExpressionIds.map((expressionId) => ({
-    user_id: userId,
-    content_id: databaseIdByExpressionId.get(expressionId) as number
-  }));
-  let cloudFavorites: FavoriteRow[] = [];
-
-  if (favoriteRows.length > 0) {
-    const { data, error } = await supabase
-      .from('favorites')
-      .upsert(favoriteRows, { onConflict: 'user_id,content_id' })
-      .select('id, content_id');
-    throwIfError(error);
-    cloudFavorites = (data ?? []) as FavoriteRow[];
+  if (!favorite) {
+    return;
   }
 
-  const favoriteDatabaseIdByExpressionId = new Map<number, number>();
-  cloudFavorites.forEach((favorite) => {
-    const expressionId = expressionIdByDatabaseId.get(favorite.content_id);
-    if (expressionId !== undefined) {
-      favoriteDatabaseIdByExpressionId.set(expressionId, favorite.id);
-    }
-  });
-
-  const defaultCategoryDatabaseId = categoryDatabaseIdByName.get(DEFAULT_CATEGORY_NAME);
-  const desiredItems: Array<{ favorite_id: number; category_id: number }> = [];
-  desiredExpressionIds.forEach((expressionId) => {
-    const favoriteId = favoriteDatabaseIdByExpressionId.get(expressionId);
-    const localCategoryIds = snapshot.savedExpressionCategoryIds[String(expressionId)] ?? [DEFAULT_CATEGORY_ID];
-
-    if (favoriteId === undefined) {
-      return;
-    }
-
-    const categoryIds = localCategoryIds
-      .map((categoryId) => categoryDatabaseIdByLocalId.get(categoryId))
-      .filter((id): id is number => id !== undefined);
-
-    if (categoryIds.length === 0 && defaultCategoryDatabaseId !== undefined) {
-      categoryIds.push(defaultCategoryDatabaseId);
-    }
-
-    uniqueNumbers(categoryIds).forEach((categoryId) => {
-      desiredItems.push({ favorite_id: favoriteId, category_id: categoryId });
-    });
-  });
-
-  if (desiredItems.length > 0) {
+  if (category) {
     const { error } = await supabase
       .from('favorite_category_items')
-      .upsert(desiredItems, {
-        onConflict: 'favorite_id,category_id',
-        ignoreDuplicates: true
-      });
+      .delete()
+      .eq('favorite_id', favorite.id)
+      .eq('category_id', category.id);
     throwIfError(error);
   }
 
-  const [{ data: existingFavorites, error: existingFavoriteError }, { data: existingItems, error: existingItemError }] =
-    await Promise.all([
-      supabase.from('favorites').select('id, content_id').eq('user_id', userId),
-      supabase.from('favorite_category_items').select('id, favorite_id, category_id')
-    ]);
-  throwIfError(existingFavoriteError);
-  throwIfError(existingItemError);
+  const { data: remainingItems, error: remainingError } = await supabase
+    .from('favorite_category_items')
+    .select('favorite_id')
+    .eq('favorite_id', favorite.id)
+    .limit(1);
+  throwIfError(remainingError);
 
-  const desiredFavoriteIds = new Set(cloudFavorites.map((favorite) => favorite.id));
-  const desiredItemKeys = new Set(desiredItems.map((item) => `${item.favorite_id}:${item.category_id}`));
-  const extraItemIds = ((existingItems ?? []) as FavoriteItemRow[])
-    .filter(
-      (item) =>
-        desiredFavoriteIds.has(item.favorite_id) &&
-        !desiredItemKeys.has(`${item.favorite_id}:${item.category_id}`)
-    )
-    .map((item) => item.id);
-
-  if (extraItemIds.length > 0) {
-    const { error } = await supabase.from('favorite_category_items').delete().in('id', extraItemIds);
-    throwIfError(error);
-  }
-
-  const extraFavoriteIds = ((existingFavorites ?? []) as FavoriteRow[])
-    .filter((favorite) => !desiredFavoriteIds.has(favorite.id))
-    .map((favorite) => favorite.id);
-
-  if (extraFavoriteIds.length > 0) {
+  if ((remainingItems ?? []).length === 0) {
     const { error } = await supabase
       .from('favorites')
       .delete()
       .eq('user_id', userId)
-      .in('id', extraFavoriteIds);
+      .eq('id', favorite.id);
     throwIfError(error);
   }
 };
 
-export const pushWrongNoteSnapshot = async (userId: string, expressionIds: number[]) => {
-  const contentRows = await loadContentRows();
-  const { databaseIdByExpressionId, expressionIdByDatabaseId } = buildContentMaps(contentRows);
-  const { data, error } = await supabase
-    .from('wrong_notes')
-    .select('content_id')
-    .eq('user_id', userId)
-    .eq('status', 'active');
+export const loadReviewQueue = async (): Promise<ReviewQueueItem[]> => {
+  const { data, error } = await supabase.rpc('get_review_queue', { p_limit: 5 });
   throwIfError(error);
 
-  const existingExpressionIds = new Set(
-    (data ?? [])
-      .map((note) => expressionIdByDatabaseId.get(note.content_id as number))
-      .filter((id): id is number => id !== undefined)
-  );
-  const missingRows = uniqueNumbers(expressionIds)
-    .filter((expressionId) => !existingExpressionIds.has(expressionId))
-    .map((expressionId) => databaseIdByExpressionId.get(expressionId))
-    .filter((contentId): contentId is number => contentId !== undefined)
-    .map((contentId) => ({
-      user_id: userId,
-      content_id: contentId,
-      selected_content_id: null,
-      is_correct: false
-    }));
+  return ((data ?? []) as ReviewQueueRow[]).map((row) => ({
+    expressionId: Number(row.content_index),
+    isWrongNote: Boolean(row.is_wrong_note),
+    correctStreak: Number(row.correct_streak ?? 0)
+  }));
+};
 
-  if (missingRows.length > 0) {
-    const { error: insertError } = await supabase.from('review_attempts').insert(missingRows);
-    throwIfError(insertError);
+export const submitReviewAnswer = async (
+  expressionId: number,
+  selectedExpressionId: number,
+  isCorrect: boolean
+): Promise<ReviewAnswerResult> => {
+  const [contentId, selectedContentId] = await Promise.all([
+    requireContentDatabaseId(expressionId),
+    requireContentDatabaseId(selectedExpressionId)
+  ]);
+  const { data, error } = await supabase
+    .rpc('record_review_answer', {
+      p_content_id: contentId,
+      p_selected_content_id: selectedContentId,
+      p_is_correct: isCorrect
+    })
+    .maybeSingle();
+
+  throwIfError(error);
+
+  const result = data as ReviewAnswerRow | null;
+
+  return {
+    wrongNoteStatus: (result?.wrong_note_status ?? 'none') as ReviewAnswerResult['wrongNoteStatus'],
+    correctStreak: Number(result?.correct_streak ?? 0),
+    mastered: Boolean(result?.mastered)
+  };
+};
+
+export const deleteCurrentAccount = async () => {
+  const { data, error } = await supabase.functions.invoke<{ deleted?: boolean }>('delete-account', {
+    method: 'POST'
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.deleted) {
+    throw new Error('회원탈퇴 응답을 확인하지 못했습니다.');
   }
 };

@@ -30,6 +30,26 @@ Android 네이티브 빌드는 JDK 17을 사용하세요.
 
 LLM이 생성한 주간 콘텐츠의 검수, 수정, 승인, 반려, 게시와 Discord 알림 설정은 [`docs/CONTENT_REVIEW_AND_PUBLISH.md`](docs/CONTENT_REVIEW_AND_PUBLISH.md)를 참고하세요.
 
+## 학습 데이터 정책
+
+- 로그인한 사용자의 학습 완료, 스트릭, 총 학습 수, 저장 문장, 복습 결과와 오답 상태는 Supabase를 기준으로 관리합니다.
+- 앱에는 학습 기록과 콘텐츠 캐시를 영구 저장하지 않으며, 인터넷 연결이 확인되어야 앱을 사용할 수 있습니다.
+- 복습은 완료한 표현 중 최대 5개를 반환하고 활성 오답을 먼저 배치합니다.
+- 오답은 2회 연속 정답을 맞히면 자동으로 `mastered` 상태가 됩니다.
+- 현재 스트릭은 하루를 완전히 건너뛰면 0으로 표시되고, 최장 스트릭은 기록으로 유지됩니다.
+
+## 테스트
+
+```sh
+npm run typecheck          # TypeScript 정적 검사
+npm run test:unit          # 순수 학습·복습 정책 단위 테스트
+npm run test:integration   # 앱과 Supabase API 호출 계약 테스트
+npm run test:db            # 로컬 Supabase pgTAP 통합 테스트
+npm run test:coverage      # Jest 커버리지 리포트
+```
+
+DB 테스트는 Docker와 로컬 Supabase가 필요합니다. 처음 실행할 때는 `npx supabase start` 후 `npx supabase db reset --local --no-seed`를 실행합니다.
+
 ## Google AdMob
 
 개발 빌드에서는 Google 공식 테스트 광고가 표시되고, 배포 빌드에서는 아래에 설정된 실제 광고 단위가 사용됩니다.

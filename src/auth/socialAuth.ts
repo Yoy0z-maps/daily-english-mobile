@@ -5,7 +5,6 @@ import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
-import { flushPendingLearningOperations } from '@/sync/learningSync';
 
 type ProfilePatch = {
   avatarUrl?: string | null;
@@ -304,14 +303,6 @@ export async function signInWithGoogle() {
 
 export async function signOutSocialSession(session: Session | null) {
   const provider = session?.user.app_metadata.provider;
-
-  if (session) {
-    try {
-      await flushPendingLearningOperations(session.user.id);
-    } catch (error) {
-      console.warn('로그아웃 전에 남은 학습 데이터를 동기화하지 못했습니다.', error);
-    }
-  }
 
   const { error } = await supabase.auth.signOut();
 

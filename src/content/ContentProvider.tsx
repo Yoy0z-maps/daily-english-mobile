@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createContext,
   type PropsWithChildren,
@@ -9,11 +8,9 @@ import {
   useState
 } from 'react';
 
-import { mockExpressions } from '@/data/mockExpressions';
 import { supabase } from '@/lib/supabase';
 import type { EnglishExpression, ExpressionCategory } from '@/types/expression';
 
-const CONTENT_CACHE_KEY = 'daily-english-published-contents-v1';
 const VALID_CATEGORIES = new Set<ExpressionCategory>([
   'Daily',
   'Business',
@@ -103,26 +100,8 @@ const toExpression = (row: ContentRow): EnglishExpression | null => {
   };
 };
 
-const parseCachedExpressions = (value: string | null) => {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(value) as unknown;
-
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      return null;
-    }
-
-    return parsed as EnglishExpression[];
-  } catch {
-    return null;
-  }
-};
-
 export function ContentProvider({ children }: PropsWithChildren) {
-  const [expressions, setExpressions] = useState<EnglishExpression[]>(mockExpressions);
+  const [expressions, setExpressions] = useState<EnglishExpression[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -150,11 +129,6 @@ export function ContentProvider({ children }: PropsWithChildren) {
     setExpressions(nextExpressions);
     setErrorMessage(null);
 
-    try {
-      await AsyncStorage.setItem(CONTENT_CACHE_KEY, JSON.stringify(nextExpressions));
-    } catch (cacheError) {
-      console.warn('학습 콘텐츠 캐시를 저장하지 못했습니다.', cacheError);
-    }
   }, []);
 
   useEffect(() => {
@@ -162,14 +136,6 @@ export function ContentProvider({ children }: PropsWithChildren) {
 
     void (async () => {
       try {
-        const cachedExpressions = parseCachedExpressions(
-          await AsyncStorage.getItem(CONTENT_CACHE_KEY)
-        );
-
-        if (isActive && cachedExpressions) {
-          setExpressions(cachedExpressions);
-        }
-
         await refresh();
       } catch (error) {
         if (isActive) {

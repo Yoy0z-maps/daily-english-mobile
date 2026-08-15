@@ -6,8 +6,8 @@ import type { EnglishExpression } from '@/types/expression';
 
 type ExpressionCardProps = {
   expression: EnglishExpression;
-  isFavorite: boolean;
-  onFavoritePress: () => void;
+  isFavorite?: boolean;
+  onFavoritePress?: () => void;
   onOpenDetail?: () => void;
   compact?: boolean;
   saveLabel?: string;
@@ -18,7 +18,7 @@ type ExpressionCardProps = {
 
 export const ExpressionCard = ({
   expression,
-  isFavorite,
+  isFavorite = false,
   onFavoritePress,
   onOpenDetail,
   compact = false,
@@ -43,7 +43,7 @@ export const ExpressionCard = ({
           </View>
         </View>
         {showSaveControls ? (
-          <Pressable style={styles.saveIconButton} onPress={onFavoritePress}>
+          <Pressable style={styles.saveIconButton} onPress={onFavoritePress} disabled={!onFavoritePress}>
             <Text style={styles.saveIconText}>{isFavorite ? '♥' : '♡'}</Text>
           </Pressable>
         ) : null}
@@ -67,7 +67,7 @@ export const ExpressionCard = ({
 
       {showSaveControls ? (
         <View style={styles.actions}>
-          <Pressable style={styles.favoriteButton} onPress={onFavoritePress}>
+          <Pressable style={styles.favoriteButton} onPress={onFavoritePress} disabled={!onFavoritePress}>
             <Text style={styles.favoriteText}>{saveLabel ?? (isFavorite ? '저장됨 · 카테고리 변경' : '저장하기')}</Text>
           </Pressable>
           {onOpenDetail ? <Text style={styles.detailText}>{detailLabel} →</Text> : null}

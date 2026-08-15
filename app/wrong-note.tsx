@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ExpressionCard } from '@/components/ExpressionCard';
 import { useContent } from '@/content/ContentProvider';
@@ -13,8 +13,6 @@ export default function WrongNoteScreen() {
   const styles = createStyles(colors);
   const { expressions: publishedExpressions } = useContent();
   const wrongAnswerExpressionIds = useAppStore((state) => state.wrongAnswerExpressionIds);
-  const removeWrongAnswer = useAppStore((state) => state.removeWrongAnswer);
-  const clearWrongAnswers = useAppStore((state) => state.clearWrongAnswers);
   const expressions = useMemo(
     () => publishedExpressions.filter((expression) => wrongAnswerExpressionIds.includes(expression.id)),
     [publishedExpressions, wrongAnswerExpressionIds]
@@ -34,9 +32,7 @@ export default function WrongNoteScreen() {
           <Text style={styles.summaryValue}>{expressions.length}</Text>
           <Text style={styles.summaryLabel}>개 표현이 오답노트에 있어요</Text>
           {expressions.length > 0 ? (
-            <Pressable style={styles.clearButton} onPress={clearWrongAnswers}>
-              <Text style={styles.clearButtonText}>전체 비우기</Text>
-            </Pressable>
+            <Text style={styles.masteryHint}>복습에서 2회 연속 정답을 맞히면 자동으로 마스터됩니다.</Text>
           ) : null}
         </View>
 
@@ -51,9 +47,7 @@ export default function WrongNoteScreen() {
               key={expression.id}
               compact
               expression={expression}
-              isFavorite
-              saveLabel="오답노트에서 제거"
-              onFavoritePress={() => removeWrongAnswer(expression.id)}
+              showSaveControls={false}
               onOpenDetail={() =>
                 router.push({
                   pathname: '/expression/[id]',
@@ -70,18 +64,6 @@ export default function WrongNoteScreen() {
 
 const createStyles = (colors: AppTheme) =>
   StyleSheet.create({
-    clearButton: {
-      alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      marginTop: 14,
-      paddingVertical: 12
-    },
-    clearButtonText: {
-      color: colors.danger,
-      fontSize: 14,
-      fontWeight: '900'
-    },
     content: {
       gap: 16,
       padding: 20,
@@ -110,6 +92,13 @@ const createStyles = (colors: AppTheme) =>
     },
     header: {
       marginTop: 8
+    },
+    masteryHint: {
+      color: colors.textMuted,
+      fontSize: 13,
+      fontWeight: '800',
+      lineHeight: 20,
+      marginTop: 10
     },
     kicker: {
       color: colors.primary,

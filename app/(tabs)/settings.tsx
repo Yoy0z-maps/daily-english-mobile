@@ -4,10 +4,11 @@ import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, V
 
 import { useAuth } from '@/auth/AuthProvider';
 import { signOutSocialSession } from '@/auth/socialAuth';
-import { PremiumCard } from '@/components/PremiumCard';
 import { StreakCard } from '@/components/StreakCard';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
+import { deleteCurrentAccount } from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 
@@ -38,12 +39,13 @@ export default function SettingsScreen() {
   const { session } = useAuth();
   const { status: syncStatus, errorMessage: syncErrorMessage, lastSyncedAt, syncNow } = useLearningSync();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const isPremium = useAppStore((state) => state.isPremium);
   const isDarkMode = useAppStore((state) => state.isDarkMode);
   const notificationsEnabled = useAppStore((state) => state.notificationsEnabled);
   const streak = useAppStore((state) => state.streak);
-  const completedExpressionIds = useAppStore((state) => state.completedExpressionIds);
-  const setPremium = useAppStore((state) => state.setPremium);
+  const longestStreak = useAppStore((state) => state.longestStreak);
+  const totalCompleted = useAppStore((state) => state.totalCompleted);
   const toggleDarkMode = useAppStore((state) => state.toggleDarkMode);
   const toggleNotifications = useAppStore((state) => state.toggleNotifications);
   const clearUserSession = useAppStore((state) => state.clearUserSession);
@@ -87,6 +89,39 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      '회원탈퇴하기',
+      '계정과 학습 기록, 저장 문장, 오답 기록이 모두 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '영구 삭제',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setIsDeletingAccount(true);
+
+              try {
+                await deleteCurrentAccount();
+                await supabase.auth.signOut({ scope: 'local' });
+                clearUserSession();
+                router.replace('/');
+              } catch (error) {
+                Alert.alert(
+                  '회원탈퇴 실패',
+                  error instanceof Error ? error.message : '계정을 삭제하지 못했습니다.'
+                );
+              } finally {
+                setIsDeletingAccount(false);
+              }
+            })();
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -96,9 +131,19 @@ export default function SettingsScreen() {
           <Text style={styles.subtitle}>학습 리듬과 앱 환경을 가볍게 관리해요.</Text>
         </View>
 
-        <StreakCard streak={streak} completedCount={completedExpressionIds.length} />
+        <StreakCard
+          streak={streak}
+          longestStreak={longestStreak}
+          completedCount={totalCompleted}
+        />
 
-        <PremiumCard isPremium={isPremium} onToggle={setPremium} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Membership</Text>
+          <Text style={styles.settingTitle}>{isPremium ? '프리미엄 사용 중' : '무료 플랜 사용 중'}</Text>
+          <Text style={styles.settingDescription}>
+            멤버십 상태는 서버에서 확인하며 이 기기에서 임의로 변경하지 않습니다.
+          </Text>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Preferences</Text>
@@ -162,8 +207,14 @@ export default function SettingsScreen() {
             <Text style={styles.menuText}>{isSigningOut ? '로그아웃 중…' : '로그아웃'}</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
-          <Pressable style={styles.menuRow} onPress={() => showMockAlert('회원탈퇴하기')}>
-            <Text style={[styles.menuText, styles.dangerText]}>회원탈퇴하기</Text>
+          <Pressable
+            style={styles.menuRow}
+            disabled={isDeletingAccount}
+            onPress={handleDeleteAccount}
+          >
+            <Text style={[styles.menuText, styles.dangerText]}>
+              {isDeletingAccount ? '회원탈퇴 처리 중…' : '회원탈퇴하기'}
+            </Text>
             <Text style={[styles.chevron, styles.dangerText]}>›</Text>
           </Pressable>
         </View>

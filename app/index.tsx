@@ -9,7 +9,6 @@ export default function IndexScreen() {
   const colors = useThemeColors();
   const { isReady: isAuthReady, session } = useAuth();
   const hasHydrated = useAppStore((state) => state.hasHydrated);
-  const hasCompletedOnboarding = useAppStore((state) => state.hasCompletedOnboarding);
 
   if (!hasHydrated || !isAuthReady) {
     return (
@@ -19,7 +18,7 @@ export default function IndexScreen() {
     );
   }
 
-  const canEnterHome = hasCompletedOnboarding && session !== null;
+  const canEnterHome = session !== null;
 
   return <Redirect href={canEnterHome ? '/home' : '/onboarding'} />;
 }

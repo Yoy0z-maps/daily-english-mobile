@@ -1,11 +1,18 @@
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { useAuth } from '@/auth/AuthProvider';
 import {
   DEFAULT_SAVED_CATEGORY_ID,
   defaultSavedCategory,
   useAppStore
 } from '@/store/useAppStore';
+import { useLearningSync } from '@/sync/LearningSyncProvider';
+import {
+  createCloudCategory,
+  removeContentFromCategory,
+  saveContentToCategory
+} from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 
@@ -18,13 +25,13 @@ type SaveToCategoryModalProps = {
 export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCategoryModalProps) => {
   const colors = useThemeColors();
   const styles = createStyles(colors);
+  const { session } = useAuth();
+  const { syncNow } = useLearningSync();
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const rawCategories = useAppStore((state) => state.savedCategories);
   const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
   const savedExpressionCategoryIds = useAppStore((state) => state.savedExpressionCategoryIds);
-  const saveExpressionToCategory = useAppStore((state) => state.saveExpressionToCategory);
-  const removeExpressionFromCategory = useAppStore((state) => state.removeExpressionFromCategory);
-  const createSavedCategory = useAppStore((state) => state.createSavedCategory);
   const categories = useMemo(() => {
     const hasDefaultCategory = rawCategories.some((category) => category.id === DEFAULT_SAVED_CATEGORY_ID);
     return hasDefaultCategory ? rawCategories : [defaultSavedCategory, ...rawCategories];
@@ -39,20 +46,57 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
     return favoriteExpressionIds.includes(expressionId) ? [DEFAULT_SAVED_CATEGORY_ID] : [];
   }, [expressionId, favoriteExpressionIds, savedExpressionCategoryIds]);
 
-  const handleCategoryPress = (categoryId: string) => {
-    if (savedCategoryIds.includes(categoryId)) {
-      removeExpressionFromCategory(expressionId, categoryId);
-    } else {
-      saveExpressionToCategory(expressionId, categoryId);
+  const handleCategoryPress = async (categoryId: string) => {
+    if (!session || isSaving) {
+      return;
     }
-    onClose();
+
+    setIsSaving(true);
+    try {
+      if (savedCategoryIds.includes(categoryId)) {
+        await removeContentFromCategory(session.user.id, expressionId, categoryId, categories);
+      } else {
+        await saveContentToCategory(session.user.id, expressionId, categoryId, categories);
+      }
+      await syncNow();
+      onClose();
+    } catch (error) {
+      Alert.alert(
+        '저장 실패',
+        error instanceof Error ? error.message : '문장 저장 위치를 변경하지 못했습니다.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleCreateAndSave = () => {
-    const categoryId = createSavedCategory(newCategoryName);
-    saveExpressionToCategory(expressionId, categoryId);
-    setNewCategoryName('');
-    onClose();
+  const handleCreateAndSave = async () => {
+    if (!session || isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const categoryId = await createCloudCategory(session.user.id, newCategoryName);
+      await syncNow();
+      const refreshedCategories = useAppStore.getState().savedCategories;
+      await saveContentToCategory(
+        session.user.id,
+        expressionId,
+        categoryId,
+        refreshedCategories
+      );
+      await syncNow();
+      setNewCategoryName('');
+      onClose();
+    } catch (error) {
+      Alert.alert(
+        '저장 실패',
+        error instanceof Error ? error.message : '카테고리를 만들고 저장하지 못했습니다.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -71,7 +115,8 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
                 <Pressable
                   key={category.id}
                   style={[styles.categoryRow, isSelected && styles.categoryRowSelected]}
-                  onPress={() => handleCategoryPress(category.id)}
+                  disabled={isSaving}
+                  onPress={() => void handleCategoryPress(category.id)}
                 >
                   <View style={styles.categoryIcon}>
                     <Text style={styles.categoryIconText}>{isSelected ? '✓' : '＋'}</Text>
@@ -93,8 +138,14 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
               placeholderTextColor={colors.textMuted}
               style={styles.input}
             />
-            <Pressable style={styles.createButton} onPress={handleCreateAndSave}>
-              <Text style={styles.createButtonText}>만들고 저장</Text>
+            <Pressable
+              style={styles.createButton}
+              disabled={isSaving}
+              onPress={() => void handleCreateAndSave()}
+            >
+              <Text style={styles.createButtonText}>
+                {isSaving ? '저장 중…' : '만들고 저장'}
+              </Text>
             </Pressable>
           </View>
         </View>

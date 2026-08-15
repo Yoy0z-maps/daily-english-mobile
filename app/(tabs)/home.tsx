@@ -1,16 +1,19 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AdBanner } from '@/components/AdBanner';
 import { ExpressionCard } from '@/components/ExpressionCard';
 import { SaveToCategoryModal } from '@/components/SaveToCategoryModal';
+import { StreakCard } from '@/components/StreakCard';
 import { useContent } from '@/content/ContentProvider';
 import {
   getLocalDateKey,
   selectIsExpressionSaved,
   useAppStore
 } from '@/store/useAppStore';
+import { useLearningSync } from '@/sync/LearningSyncProvider';
+import { completeCurrentContent } from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 import { reloadAllWidgets } from '@/widget/reloadWidgets';
@@ -33,17 +36,20 @@ const getHistoryDateLabel = (daysAgo: number) => {
 export default function HomeScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
-  const { expressions } = useContent();
+  const { expressions, errorMessage: contentError, isLoading: isContentLoading, refresh } = useContent();
+  const { status: syncStatus, syncNow } = useLearningSync();
   const [categoryModalExpressionId, setCategoryModalExpressionId] = useState<number | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
   const currentExpressionId = useAppStore((state) => state.currentExpressionId);
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const streak = useAppStore((state) => state.streak);
+  const longestStreak = useAppStore((state) => state.longestStreak);
+  const totalCompleted = useAppStore((state) => state.totalCompleted);
   const isPremium = useAppStore((state) => state.isPremium);
   const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
   const savedExpressionCategoryIds = useAppStore((state) => state.savedExpressionCategoryIds);
   const completedExpressionIds = useAppStore((state) => state.completedExpressionIds);
   const lastCompletedDate = useAppStore((state) => state.lastCompletedDate);
-  const completeToday = useAppStore((state) => state.completeToday);
   const exactCurrentPosition = expressions.findIndex(
     (item) => item.id === currentExpressionId
   );
@@ -57,7 +63,9 @@ export default function HomeScreen() {
         ? nextCurrentPosition
         : Math.max(0, expressions.length - 1);
   const expression = expressions[currentPosition];
-  const isSaved = useAppStore((state) => selectIsExpressionSaved(state, expression.id));
+  const isSaved = useAppStore((state) =>
+    selectIsExpressionSaved(state, expression?.id ?? -1)
+  );
   const historyDays = Math.min(
     currentPosition,
     isPremium ? expressions.length - 1 : FREE_HISTORY_DAYS
@@ -70,10 +78,13 @@ export default function HomeScreen() {
     };
   });
 
-  const isCompletedToday = lastCompletedDate === getLocalDateKey() && completedExpressionIds.includes(expression.id);
+  const isCompletedToday =
+    Boolean(expression) &&
+    lastCompletedDate === getLocalDateKey() &&
+    completedExpressionIds.includes(expression.id);
 
   useEffect(() => {
-    if (!hasHydrated) {
+    if (!hasHydrated || !expression) {
       return;
     }
 
@@ -81,15 +92,60 @@ export default function HomeScreen() {
   }, [expression, hasHydrated, streak]);
 
   const syncWidgetFromStore = async () => {
+    if (!expression) {
+      return;
+    }
+
     const state = useAppStore.getState();
     await saveWidgetExpressionData(expression, state.streak);
     await reloadAllWidgets();
   };
 
   const handleCompleteToday = async () => {
-    completeToday();
-    await syncWidgetFromStore();
+    if (!expression || isCompletedToday || isCompleting) {
+      return;
+    }
+
+    setIsCompleting(true);
+
+    try {
+      await completeCurrentContent(expression.id);
+      await syncNow();
+      await syncWidgetFromStore();
+    } catch (error) {
+      Alert.alert(
+        '학습 완료 실패',
+        error instanceof Error ? error.message : '학습 완료를 저장하지 못했습니다.'
+      );
+    } finally {
+      setIsCompleting(false);
+    }
   };
+
+  if (isContentLoading || syncStatus === 'syncing') {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.centeredState}>
+          <ActivityIndicator color={colors.primary} size="large" />
+          <Text style={styles.stateTitle}>학습 기록을 불러오는 중</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!expression || contentError) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.centeredState}>
+          <Text style={styles.stateTitle}>학습 콘텐츠를 불러오지 못했어요</Text>
+          <Text style={styles.stateText}>{contentError ?? '게시된 콘텐츠가 없습니다.'}</Text>
+          <Pressable style={styles.retryButton} onPress={() => void refresh()}>
+            <Text style={styles.retryButtonText}>다시 시도</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -100,6 +156,12 @@ export default function HomeScreen() {
           <Text style={styles.kicker}>오늘의 1문장</Text>
           <Text style={styles.heroTitle}>오늘은 이 문장 하나만</Text>
         </View>
+
+        <StreakCard
+          streak={streak}
+          longestStreak={longestStreak}
+          completedCount={totalCompleted}
+        />
 
         <ExpressionCard
           expression={expression}
@@ -125,9 +187,12 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             style={[styles.completeButton, isCompletedToday && styles.completeButtonDone]}
+            disabled={isCompletedToday || isCompleting}
             onPress={handleCompleteToday}
           >
-            <Text style={styles.completeButtonText}>{isCompletedToday ? '학습완료' : '학습 완료'}</Text>
+            <Text style={styles.completeButtonText}>
+              {isCompletedToday ? '오늘 학습 완료' : isCompleting ? '저장 중…' : '오늘 단어 학습 완료'}
+            </Text>
           </Pressable>
         </View>
 
@@ -190,6 +255,12 @@ const createStyles = (colors: AppTheme) =>
       flexDirection: 'row',
       gap: 10
     },
+    centeredState: {
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+      padding: 28
+    },
     completeButton: {
       alignItems: 'center',
       backgroundColor: colors.primary,
@@ -228,6 +299,32 @@ const createStyles = (colors: AppTheme) =>
       fontWeight: '900',
       letterSpacing: 0.7,
       textTransform: 'uppercase'
+    },
+    retryButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 16,
+      marginTop: 18,
+      paddingHorizontal: 20,
+      paddingVertical: 12
+    },
+    retryButtonText: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '900'
+    },
+    stateText: {
+      color: colors.textMuted,
+      fontSize: 14,
+      fontWeight: '700',
+      marginTop: 8,
+      textAlign: 'center'
+    },
+    stateTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '900',
+      marginTop: 14,
+      textAlign: 'center'
     },
     historyDate: {
       color: colors.textMuted,
