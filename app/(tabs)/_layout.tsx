@@ -1,12 +1,15 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import type { ComponentProps } from 'react';
 
 import { useThemeColors } from '@/theme/useThemeColors';
 
-const icons = {
-  home: '⌂',
-  saved: '♥',
-  settings: '⚙'
+type IoniconsName = ComponentProps<typeof Ionicons>['name'];
+
+const icons: Record<string, { active: IoniconsName; inactive: IoniconsName }> = {
+  home: { active: 'home', inactive: 'home-outline' },
+  saved: { active: 'bookmark', inactive: 'bookmark-outline' },
+  settings: { active: 'settings', inactive: 'settings-outline' }
 };
 
 export default function TabLayout() {
@@ -29,16 +32,15 @@ export default function TabLayout() {
           fontSize: 12,
           fontWeight: '900'
         },
-        tabBarIcon: ({ color }) => (
-          <Text style={{ color, fontSize: 21, fontWeight: '900' }}>
-            {icons[route.name as keyof typeof icons]}
-          </Text>
-        )
+        tabBarIcon: ({ color, focused, size }) => {
+          const icon = icons[route.name] ?? icons.home;
+          return <Ionicons color={color} name={focused ? icon.active : icon.inactive} size={size} />;
+        }
       })}
     >
-      <Tabs.Screen name="home" options={{ title: 'Home' }} />
-      <Tabs.Screen name="saved" options={{ title: 'Saved' }} />
-      <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
+      <Tabs.Screen name="home" options={{ title: '홈' }} />
+      <Tabs.Screen name="saved" options={{ title: '저장' }} />
+      <Tabs.Screen name="settings" options={{ title: '설정' }} />
     </Tabs>
   );
 }

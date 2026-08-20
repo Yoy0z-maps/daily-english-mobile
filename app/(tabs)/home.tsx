@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -37,7 +38,7 @@ export default function HomeScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
   const { expressions, errorMessage: contentError, isLoading: isContentLoading, refresh } = useContent();
-  const { status: syncStatus, syncNow } = useLearningSync();
+  const { isInitialSyncing, syncNow } = useLearningSync();
   const [categoryModalExpressionId, setCategoryModalExpressionId] = useState<number | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const currentExpressionId = useAppStore((state) => state.currentExpressionId);
@@ -122,7 +123,7 @@ export default function HomeScreen() {
     }
   };
 
-  if (isContentLoading || syncStatus === 'syncing') {
+  if (isContentLoading || isInitialSyncing) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.centeredState}>
@@ -183,6 +184,11 @@ export default function HomeScreen() {
             style={styles.saveButton}
             onPress={() => setCategoryModalExpressionId(expression.id)}
           >
+            <Ionicons
+              color={colors.primary}
+              name={isSaved ? 'bookmark' : 'bookmark-outline'}
+              size={19}
+            />
             <Text style={styles.saveButtonText}>{isSaved ? '저장 위치 변경' : '오늘 단어 저장하기'}</Text>
           </Pressable>
           <Pressable
@@ -190,6 +196,11 @@ export default function HomeScreen() {
             disabled={isCompletedToday || isCompleting}
             onPress={handleCompleteToday}
           >
+            <Ionicons
+              color="#FFFFFF"
+              name={isCompletedToday ? 'checkmark-circle' : 'checkmark-circle-outline'}
+              size={20}
+            />
             <Text style={styles.completeButtonText}>
               {isCompletedToday ? '오늘 학습 완료' : isCompleting ? '저장 중…' : '오늘 단어 학습 완료'}
             </Text>
@@ -266,6 +277,8 @@ const createStyles = (colors: AppTheme) =>
       backgroundColor: colors.primary,
       borderRadius: 20,
       flex: 1,
+      flexDirection: 'row',
+      gap: 6,
       justifyContent: 'center',
       minHeight: 54,
       paddingHorizontal: 14
@@ -398,6 +411,8 @@ const createStyles = (colors: AppTheme) =>
       borderRadius: 20,
       borderWidth: 1,
       flex: 1.15,
+      flexDirection: 'row',
+      gap: 6,
       justifyContent: 'center',
       minHeight: 54,
       paddingHorizontal: 14

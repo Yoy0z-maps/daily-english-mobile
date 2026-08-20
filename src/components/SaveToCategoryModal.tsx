@@ -78,13 +78,22 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
     setIsSaving(true);
     try {
       const categoryId = await createCloudCategory(session.user.id, newCategoryName);
-      await syncNow();
-      const refreshedCategories = useAppStore.getState().savedCategories;
+      const trimmedCategoryName = newCategoryName.trim();
+      const categoriesWithNewCategory = categories.some((category) => category.id === categoryId)
+        ? categories
+        : [
+            ...categories,
+            {
+              id: categoryId,
+              name: trimmedCategoryName,
+              createdAt: new Date().toISOString()
+            }
+          ];
       await saveContentToCategory(
         session.user.id,
         expressionId,
         categoryId,
-        refreshedCategories
+        categoriesWithNewCategory
       );
       await syncNow();
       setNewCategoryName('');

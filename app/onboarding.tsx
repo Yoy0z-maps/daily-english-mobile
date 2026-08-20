@@ -1,4 +1,3 @@
-import { API_BASE } from "@/constants/api";
 import { router } from "expo-router";
 import {
   Pressable,
@@ -7,7 +6,6 @@ import {
   Text,
   View,
   Image,
-  Linking,
 } from "react-native";
 import { useState } from "react";
 import Svg, { Path } from "react-native-svg";
@@ -22,9 +20,6 @@ import type { AppTheme } from "@/theme/colors";
 import { useThemeColors } from "@/theme/useThemeColors";
 import type { AuthProvider } from "ctx";
 
-const TERMS_OF_SERVICE_URL = `${API_BASE}/terms`;
-const PRIVACY_POLICY_URL = `${API_BASE}/privacy-policy`;
-
 const onboardingItems = [
   ["하루 1문장", "실생활에서 바로 쓰는 표현만 골라 학습해요."],
   ["위젯 복습", "홈 화면과 잠금 화면에서 오늘 문장을 바로 확인해요."],
@@ -37,19 +32,6 @@ export default function OnboardingScreen() {
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  async function openLegalDocument(url: string) {
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (!canOpen) {
-        throw new Error("문서를 열 수 없는 주소입니다.");
-      }
-
-      await Linking.openURL(url);
-    } catch {
-      setErrorMsg("문서 링크를 여는 중 오류가 발생했습니다.");
-    }
-  }
 
   async function signInWithProvider(provider: AuthProvider) {
     switch (provider) {
@@ -190,7 +172,10 @@ export default function OnboardingScreen() {
             <Text
               style={styles.infoTextLink}
               onPress={() => {
-                void openLegalDocument(TERMS_OF_SERVICE_URL);
+                router.push({
+                  pathname: "/legal/[document]",
+                  params: { document: "terms" },
+                });
               }}
             >
               이용약관
@@ -199,7 +184,10 @@ export default function OnboardingScreen() {
             <Text
               style={styles.infoTextLink}
               onPress={() => {
-                void openLegalDocument(PRIVACY_POLICY_URL);
+                router.push({
+                  pathname: "/legal/[document]",
+                  params: { document: "privacy" },
+                });
               }}
             >
               개인정보 취급방침

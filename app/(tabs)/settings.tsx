@@ -59,10 +59,6 @@ export default function SettingsScreen() {
           ? '동기화 필요'
           : '대기 중';
 
-  const showMockAlert = (title: string) => {
-    Alert.alert(title, 'MVP에서는 화면 이동/계정 처리를 mock으로만 표시합니다.');
-  };
-
   const handleSignOut = () => {
     Alert.alert('로그아웃', '이 기기에 남은 사용자 학습 캐시도 함께 비울까요?', [
       { text: '취소', style: 'cancel' },
@@ -221,11 +217,21 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Legal</Text>
-          <Pressable style={styles.menuRow} onPress={() => showMockAlert('개인정보처리방침')}>
+          <Pressable
+            style={styles.menuRow}
+            onPress={() =>
+              router.push({ pathname: '/legal/[document]', params: { document: 'privacy' } })
+            }
+          >
             <Text style={styles.menuText}>개인정보처리방침</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>
-          <Pressable style={styles.menuRow} onPress={() => showMockAlert('이용약관')}>
+          <Pressable
+            style={styles.menuRow}
+            onPress={() =>
+              router.push({ pathname: '/legal/[document]', params: { document: 'terms' } })
+            }
+          >
             <Text style={styles.menuText}>이용약관</Text>
             <Text style={styles.chevron}>›</Text>
           </Pressable>

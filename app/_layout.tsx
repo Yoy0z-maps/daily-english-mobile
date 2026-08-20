@@ -33,6 +33,10 @@ function RootNavigator() {
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="legal/[document]"
+          options={{ title: "법적 고지", presentation: "card" }}
+        />
         <Stack.Protected guard={canEnterOnboarding}>
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         </Stack.Protected>

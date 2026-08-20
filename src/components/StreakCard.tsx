@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { AppTheme } from '@/theme/colors';
@@ -17,17 +18,26 @@ export const StreakCard = ({ streak, longestStreak, completedCount }: StreakCard
     <View style={styles.container}>
       <View style={styles.statBlock}>
         <Text style={styles.label}>연속 출석</Text>
-        <Text style={styles.value}>🔥 {streak}일</Text>
+        <View style={styles.valueRow}>
+          <Ionicons color={colors.primary} name="flame" size={18} />
+          <Text style={styles.value}>{streak}일</Text>
+        </View>
       </View>
       <View style={styles.divider} />
       <View style={styles.statBlock}>
         <Text style={styles.label}>최장 연속</Text>
-        <Text style={styles.value}>{longestStreak}일</Text>
+        <View style={styles.valueRow}>
+          <Ionicons color={colors.primary} name="trophy-outline" size={18} />
+          <Text style={styles.value}>{longestStreak}일</Text>
+        </View>
       </View>
       <View style={styles.divider} />
       <View style={styles.statBlock}>
         <Text style={styles.label}>총 학습</Text>
-        <Text style={styles.value}>{completedCount}개</Text>
+        <View style={styles.valueRow}>
+          <Ionicons color={colors.primary} name="checkmark-circle-outline" size={18} />
+          <Text style={styles.value}>{completedCount}개</Text>
+        </View>
       </View>
     </View>
   );
@@ -75,5 +85,11 @@ const createStyles = (colors: AppTheme) =>
       fontSize: 18,
       fontWeight: '900',
       textAlign: 'center'
+    },
+    valueRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 4,
+      justifyContent: 'center'
     }
   });

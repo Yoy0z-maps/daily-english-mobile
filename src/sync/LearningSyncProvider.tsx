@@ -18,6 +18,7 @@ type LearningSyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
 type LearningSyncContextValue = {
   status: LearningSyncStatus;
+  isInitialSyncing: boolean;
   errorMessage: string | null;
   lastSyncedAt: string | null;
   syncNow: () => Promise<void>;
@@ -29,6 +30,7 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
   const { session } = useAuth();
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const [status, setStatus] = useState<LearningSyncStatus>('idle');
+  const [isInitialSyncing, setIsInitialSyncing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const activeSyncRef = useRef<Promise<void> | null>(null);
@@ -40,6 +42,7 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
     activeSyncRef.current = null;
     useAppStore.getState().clearUserSession();
     setStatus(userId ? 'syncing' : 'idle');
+    setIsInitialSyncing(Boolean(userId));
     setErrorMessage(null);
     setLastSyncedAt(null);
   }, [userId]);
@@ -79,6 +82,9 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
           setErrorMessage(message);
         }
       } finally {
+        if (activeUserIdRef.current === syncingUserId) {
+          setIsInitialSyncing(false);
+        }
         activeSyncRef.current = null;
       }
     })();
@@ -107,8 +113,8 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
   }, [hasHydrated, syncNow, userId]);
 
   const value = useMemo<LearningSyncContextValue>(
-    () => ({ status, errorMessage, lastSyncedAt, syncNow }),
-    [errorMessage, lastSyncedAt, status, syncNow]
+    () => ({ status, isInitialSyncing, errorMessage, lastSyncedAt, syncNow }),
+    [errorMessage, isInitialSyncing, lastSyncedAt, status, syncNow]
   );
 
   return <LearningSyncContext.Provider value={value}>{children}</LearningSyncContext.Provider>;

@@ -25,6 +25,13 @@ const GOOGLE_SIGN_IN_PLUGINS = GOOGLE_IOS_URL_SCHEME
       ],
     ]
   : [];
+const GOOGLE_SIGN_IN_EXTRA_IOS_PODS = GOOGLE_IOS_URL_SCHEME
+  ? []
+  : [
+      { name: "AppCheckCore", modular_headers: true },
+      { name: "GoogleUtilities", modular_headers: true },
+      { name: "RecaptchaInterop", modular_headers: true },
+    ];
 
 // Keep this list aligned with Google's current iOS Mobile Ads quick-start guide.
 const ADMOB_SK_AD_NETWORK_ITEMS = [
@@ -134,6 +141,9 @@ module.exports = {
       [
         "expo-build-properties",
         {
+          ios: {
+            extraPods: GOOGLE_SIGN_IN_EXTRA_IOS_PODS,
+          },
           android: {
             extraMavenRepos: [
               "https://devrepo.kakao.com/nexus/content/groups/public/",

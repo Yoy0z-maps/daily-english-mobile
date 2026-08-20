@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { AppTheme } from '@/theme/colors';
@@ -44,7 +45,11 @@ export const ExpressionCard = ({
         </View>
         {showSaveControls ? (
           <Pressable style={styles.saveIconButton} onPress={onFavoritePress} disabled={!onFavoritePress}>
-            <Text style={styles.saveIconText}>{isFavorite ? '♥' : '♡'}</Text>
+            <Ionicons
+              color={isFavorite ? '#FFFFFF' : colors.primary}
+              name={isFavorite ? 'bookmark' : 'bookmark-outline'}
+              size={19}
+            />
           </Pressable>
         ) : null}
       </View>
@@ -218,11 +223,6 @@ const createStyles = (colors: AppTheme, compact: boolean, isFavorite: boolean) =
       height: 38,
       justifyContent: 'center',
       width: 38
-    },
-    saveIconText: {
-      color: isFavorite ? '#FFFFFF' : colors.primary,
-      fontSize: 18,
-      fontWeight: '900'
     },
     sentence: {
       color: colors.text,
