@@ -16,6 +16,7 @@ type AppState = LearningStateSnapshot & {
   hasCompletedOnboarding: boolean;
   isDarkMode: boolean;
   notificationsEnabled: boolean;
+  isAdminMode: boolean;
 };
 
 type AppActions = {
@@ -25,6 +26,7 @@ type AppActions = {
   toggleDarkMode: () => void;
   toggleNotifications: () => void;
   markHydrated: () => void;
+  enterAdminMode: () => void;
 };
 
 type InternalState = {
@@ -74,6 +76,7 @@ export const useAppStore = create<AppStore>()(
       hasCompletedOnboarding: false,
       isDarkMode: false,
       notificationsEnabled: true,
+      isAdminMode: false,
       hasHydrated: false,
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
       applyCloudLearningState: (snapshot) =>
@@ -81,12 +84,15 @@ export const useAppStore = create<AppStore>()(
       clearUserSession: () =>
         set({
           ...emptyLearningState,
-          hasCompletedOnboarding: false
+          hasCompletedOnboarding: false,
+          isAdminMode: false
         }),
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
       toggleNotifications: () =>
         set((state) => ({ notificationsEnabled: !state.notificationsEnabled })),
-      markHydrated: () => set({ hasHydrated: true })
+      markHydrated: () => set({ hasHydrated: true }),
+      // 심사용 데모 계정 진입 — 실제 백엔드 세션 없이 로컬 상태만으로 홈 화면 접근을 허용한다.
+      enterAdminMode: () => set({ isAdminMode: true, hasCompletedOnboarding: true })
     }),
     {
       name: 'daily-english-device-settings-v1',
@@ -110,6 +116,8 @@ export const useAppStore = create<AppStore>()(
     }
   )
 );
+
+export const selectEffectiveIsPremium = (state: AppStore) => state.isPremium || state.isAdminMode;
 
 export const selectSavedCategories = (state: AppStore) =>
   ensureDefaultCategory(state.savedCategories);
