@@ -40,7 +40,7 @@ export default function SettingsScreen() {
   const { status: syncStatus, errorMessage: syncErrorMessage, lastSyncedAt, syncNow } = useLearningSync();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const isPremium = useAppStore((state) => state.isPremium);
+  // const isPremium = useAppStore((state) => state.isPremium); // TODO: 멤버십 UI 재활성화 시 주석 해제
   const isDarkMode = useAppStore((state) => state.isDarkMode);
   const notificationsEnabled = useAppStore((state) => state.notificationsEnabled);
   const streak = useAppStore((state) => state.streak);
@@ -49,6 +49,7 @@ export default function SettingsScreen() {
   const toggleDarkMode = useAppStore((state) => state.toggleDarkMode);
   const toggleNotifications = useAppStore((state) => state.toggleNotifications);
   const clearUserSession = useAppStore((state) => state.clearUserSession);
+  const isAdminMode = useAppStore((state) => state.isAdminMode);
   const providerSummary = getProviderSummary(session);
   const syncStatusLabel =
     syncStatus === 'syncing'
@@ -86,6 +87,12 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccount = () => {
+    // 앱스토어 심사용 데모 계정은 공용 계정이라 실수로라도 영구 삭제되면 안 되므로 별도 안내만 하고 막는다.
+    if (isAdminMode) {
+      Alert.alert('심사용 계정', '심사용 데모 계정은 삭제할 수 없습니다.');
+      return;
+    }
+
     Alert.alert(
       '회원탈퇴하기',
       '계정과 학습 기록, 저장 문장, 오답 기록이 모두 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
@@ -133,6 +140,7 @@ export default function SettingsScreen() {
           completedCount={totalCompleted}
         />
 
+        {/* TODO: 멤버십 UI 재활성화 시 주석 해제
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Membership</Text>
           <Text style={styles.settingTitle}>{isPremium ? '프리미엄 사용 중' : '무료 플랜 사용 중'}</Text>
@@ -140,6 +148,7 @@ export default function SettingsScreen() {
             멤버십 상태는 서버에서 확인하며 이 기기에서 임의로 변경하지 않습니다.
           </Text>
         </View>
+        */}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Preferences</Text>
