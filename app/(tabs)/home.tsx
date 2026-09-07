@@ -10,6 +10,7 @@ import { StreakCard } from '@/components/StreakCard';
 import { useContent } from '@/content/ContentProvider';
 import {
   getLocalDateKey,
+  selectEffectiveIsPremium,
   selectIsExpressionSaved,
   useAppStore
 } from '@/store/useAppStore';
@@ -41,12 +42,17 @@ export default function HomeScreen() {
   const { isInitialSyncing, syncNow } = useLearningSync();
   const [categoryModalExpressionId, setCategoryModalExpressionId] = useState<number | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
-  const currentExpressionId = useAppStore((state) => state.currentExpressionId);
+  const storedCurrentExpressionId = useAppStore((state) => state.currentExpressionId);
+  const isAdminMode = useAppStore((state) => state.isAdminMode);
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const streak = useAppStore((state) => state.streak);
   const longestStreak = useAppStore((state) => state.longestStreak);
   const totalCompleted = useAppStore((state) => state.totalCompleted);
-  const isPremium = useAppStore((state) => state.isPremium);
+  const isPremium = useAppStore(selectEffectiveIsPremium);
+  // 어드민(심사용) 모드에서는 항상 가장 최신 문장을 오늘의 문장으로 보여주고, 나머지는 전부 이전 문장으로 열람 가능하게 한다.
+  const latestExpressionId =
+    expressions.length > 0 ? expressions[expressions.length - 1].id : storedCurrentExpressionId;
+  const currentExpressionId = isAdminMode ? latestExpressionId : storedCurrentExpressionId;
   const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
   const savedExpressionCategoryIds = useAppStore((state) => state.savedExpressionCategoryIds);
   const completedExpressionIds = useAppStore((state) => state.completedExpressionIds);

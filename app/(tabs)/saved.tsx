@@ -11,6 +11,7 @@ import { useContent } from '@/content/ContentProvider';
 import {
   DEFAULT_SAVED_CATEGORY_ID,
   defaultSavedCategory,
+  selectEffectiveIsPremium,
   useAppStore
 } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
@@ -33,7 +34,7 @@ export default function SavedScreen() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isMutating, setIsMutating] = useState(false);
   const rawCategories = useAppStore((state) => state.savedCategories);
-  const isPremium = useAppStore((state) => state.isPremium);
+  const isPremium = useAppStore(selectEffectiveIsPremium);
   const wrongAnswerCount = useAppStore((state) => state.wrongAnswerExpressionIds.length);
   const totalCompleted = useAppStore((state) => state.totalCompleted);
   const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
