@@ -13,6 +13,9 @@ type ProfilePatch = {
 
 const APPLE_NATIVE_CLIENT_ID = 'com.dailyenglish.sentences';
 const KAKAO_NATIVE_CLIENT_ID = 'bb53ac5001095de0bcbd0b3a539fbdf0';
+// 앱스토어 심사용 데모 계정. 개인정보 없이 Supabase에 별도로 만들어 둔 email/password 계정이다.
+const REVIEW_ACCOUNT_EMAIL = 'app-review@dailyenglish.app';
+const REVIEW_ACCOUNT_PASSWORD = 'DailyEnglish-Review-2026!';
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
 let isGoogleSignInConfigured = false;
@@ -299,6 +302,20 @@ export async function signInWithGoogle() {
   });
 
   return session;
+}
+
+// 온보딩 화면의 3탭 제스처로 진입하는 앱스토어 심사용 데모 로그인.
+export async function signInWithReviewAccount() {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: REVIEW_ACCOUNT_EMAIL,
+    password: REVIEW_ACCOUNT_PASSWORD
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return requireSession(data.session);
 }
 
 export async function signOutSocialSession(session: Session | null) {

@@ -18,7 +18,8 @@ function RootNavigator() {
   const { isReady: isAuthReady, session } = useAuth();
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const isDarkMode = useAppStore((state) => state.isDarkMode);
-  const canEnterHome = isAuthReady && hasHydrated && session !== null;
+  const isAdminMode = useAppStore((state) => state.isAdminMode);
+  const canEnterHome = isAuthReady && hasHydrated && (session !== null || isAdminMode);
   const canEnterOnboarding = isAuthReady && hasHydrated && !canEnterHome;
 
   return (

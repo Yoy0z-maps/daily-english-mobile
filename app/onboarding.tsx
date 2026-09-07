@@ -7,14 +7,15 @@ import {
   View,
   Image,
 } from "react-native";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Svg, { Path } from "react-native-svg";
 
 import { useAppStore } from "@/store/useAppStore";
 import {
   signInWithApple,
-  signInWithGoogle,
+  // signInWithGoogle, // TODO: 구글 로그인 재활성화 시 주석 해제
   signInWithKakao,
+  signInWithReviewAccount,
 } from "@/auth/socialAuth";
 import type { AppTheme } from "@/theme/colors";
 import { useThemeColors } from "@/theme/useThemeColors";
@@ -30,8 +31,52 @@ export default function OnboardingScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
+  const enterAdminMode = useAppStore((state) => state.enterAdminMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const adminTapCountRef = useRef(0);
+  const adminTapResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 심사용 데모 계정 진입: 온보딩 상단 로고를 3회 연속 탭하면 실제 Supabase 데모 계정으로 로그인한다.
+  function handleLogoPress() {
+    if (isSubmitting) {
+      return;
+    }
+
+    adminTapCountRef.current += 1;
+
+    if (adminTapResetTimer.current) {
+      clearTimeout(adminTapResetTimer.current);
+    }
+
+    if (adminTapCountRef.current >= 3) {
+      adminTapCountRef.current = 0;
+      void handleReviewAccountSignIn();
+      return;
+    }
+
+    adminTapResetTimer.current = setTimeout(() => {
+      adminTapCountRef.current = 0;
+    }, 800);
+  }
+
+  async function handleReviewAccountSignIn() {
+    setIsSubmitting(true);
+    setErrorMsg(null);
+
+    try {
+      await signInWithReviewAccount();
+      // 광고 숨김 + 항상 최신 단어 표시는 로컬 어드민 플래그로 처리한다(콘텐츠가 매주 추가돼도 별도 서버 유지 관리가 필요 없다).
+      enterAdminMode();
+      router.replace("/");
+    } catch (error) {
+      setErrorMsg(
+        error instanceof Error ? error.message : "심사용 계정 로그인에 실패했습니다."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   async function signInWithProvider(provider: AuthProvider) {
     switch (provider) {
@@ -39,8 +84,9 @@ export default function OnboardingScreen() {
         return signInWithApple();
       case "KAKAO":
         return signInWithKakao();
+      // case "GOOGLE": // TODO: 구글 로그인 재활성화 시 주석 해제
+      //   return signInWithGoogle();
       case "GOOGLE":
-        return signInWithGoogle();
       case "NAVER":
         throw new Error(`${provider} 로그인은 아직 준비 중입니다.`);
     }
@@ -84,7 +130,9 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View>
-          <Text style={styles.eyebrow}>Daily English</Text>
+          <Pressable onPress={handleLogoPress} hitSlop={12}>
+            <Text style={styles.eyebrow}>Daily English</Text>
+          </Pressable>
           <Text style={styles.title}>
             오늘 하나만,{"\n"}내일 더 자연스럽게.
           </Text>
@@ -128,6 +176,7 @@ export default function OnboardingScreen() {
               />
             </Svg>
           </Pressable>
+          {/* TODO: 구글 로그인 재활성화 시 주석 해제 (Google Client ID 설정 필요)
           <Pressable
             onPress={() => {
               void handleSocialSignIn("GOOGLE");
@@ -142,6 +191,7 @@ export default function OnboardingScreen() {
               />
             </Svg>
           </Pressable>
+          */}
           <Pressable
             onPress={() => {
               void handleSocialSignIn("KAKAO");
@@ -208,11 +258,12 @@ const createStyles = (colors: AppTheme) =>
       fontFamily: "WantedSans",
       fontSize: 14,
       fontWeight: "700",
-      marginBottom: 4,
+      marginBottom: 10,
       textAlign: "center",
     },
     cardList: {
       gap: 14,
+      marginTop: 32,
     },
     container: {
       flex: 1,
@@ -287,7 +338,8 @@ const createStyles = (colors: AppTheme) =>
       textAlign: "center",
     },
     authContainer: {
-      marginTop: 8,
+      marginTop: 20,
+      marginBottom: 28,
       justifyContent: "center",
       flexDirection: "row",
       columnGap: 16,
