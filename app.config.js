@@ -93,6 +93,7 @@ module.exports = {
     slug: "daily-english-sentence",
     version: "1.0.0",
     orientation: "portrait",
+    icon: "./src/assets/icon/icon.png",
     scheme: "dailyenglish",
     jsEngine: "jsc",
     userInterfaceStyle: "automatic",
