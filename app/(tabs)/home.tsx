@@ -15,7 +15,7 @@ import {
   useAppStore
 } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
-import { completeCurrentContent } from '@/sync/learningSync';
+import { completeCurrentContent, type CompletedHistoryEntry } from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
 import { useThemeColors } from '@/theme/useThemeColors';
 import { reloadAllWidgets } from '@/widget/reloadWidgets';
@@ -28,17 +28,37 @@ const getHistoryDateLabel = (daysAgo: number) => {
   date.setHours(0, 0, 0, 0);
   date.setDate(date.getDate() - daysAgo);
 
-  if (daysAgo === 1) {
+  if (daysAgo <= 1) {
     return `어제 · ${date.getMonth() + 1}월 ${date.getDate()}일`;
   }
 
   return `${daysAgo}일 전 · ${date.getMonth() + 1}월 ${date.getDate()}일`;
 };
 
+// completed_date("YYYY-MM-DD")와 오늘 사이의 일수 차이를 구한다. 완료 기록의 실제 날짜를 라벨에 반영하기 위함.
+const getDaysAgo = (dateKey: string) => {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const completedDate = new Date(year, (month ?? 1) - 1, day ?? 1);
+  completedDate.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return Math.max(1, Math.round((today.getTime() - completedDate.getTime()) / (24 * 60 * 60 * 1000)));
+};
+
+type HistoryItem = { expressionId: number; daysAgo: number };
+
 export default function HomeScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
-  const { expressions, errorMessage: contentError, isLoading: isContentLoading, refresh } = useContent();
+  const {
+    expressions,
+    errorMessage: contentError,
+    isLoading: isContentLoading,
+    refresh,
+    getExpressionById
+  } = useContent();
   const { isInitialSyncing, syncNow } = useLearningSync();
   const [categoryModalExpressionId, setCategoryModalExpressionId] = useState<number | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -56,6 +76,7 @@ export default function HomeScreen() {
   const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
   const savedExpressionCategoryIds = useAppStore((state) => state.savedExpressionCategoryIds);
   const completedExpressionIds = useAppStore((state) => state.completedExpressionIds);
+  const completedHistory = useAppStore((state) => state.completedHistory);
   const lastCompletedDate = useAppStore((state) => state.lastCompletedDate);
   const exactCurrentPosition = expressions.findIndex(
     (item) => item.id === currentExpressionId
@@ -73,17 +94,21 @@ export default function HomeScreen() {
   const isSaved = useAppStore((state) =>
     selectIsExpressionSaved(state, expression?.id ?? -1)
   );
-  const historyDays = Math.min(
-    currentPosition,
-    isPremium ? expressions.length - 1 : FREE_HISTORY_DAYS
-  );
-  const historyExpressions = Array.from({ length: historyDays }, (_, index) => {
-    const daysAgo = index + 1;
-    return {
-      daysAgo,
-      expression: expressions[currentPosition - daysAgo]
-    };
-  });
+  // "이전 문장"은 콘텐츠 목록 위치가 아니라 실제로 학습 완료한 기록(completedHistory)만 최신순으로 보여준다.
+  // 어드민(심사용) 모드는 실제 완료 기록이 없으므로, 최신 문장을 제외한 나머지를 전부 이전 문장으로 보여준다.
+  const pastHistory: HistoryItem[] = isAdminMode
+    ? expressions
+        .filter((item) => item.id !== currentExpressionId)
+        .slice()
+        .reverse()
+        .map((item, index) => ({ expressionId: item.id, daysAgo: index + 1 }))
+    : completedHistory
+        .filter((entry: CompletedHistoryEntry) => entry.expressionId !== currentExpressionId)
+        .map((entry) => ({ expressionId: entry.expressionId, daysAgo: getDaysAgo(entry.completedDate) }));
+  const visibleHistoryCount = isPremium
+    ? pastHistory.length
+    : Math.min(pastHistory.length, FREE_HISTORY_DAYS);
+  const visibleHistory = pastHistory.slice(0, visibleHistoryCount);
 
   const isCompletedToday =
     Boolean(expression) &&
@@ -114,16 +139,28 @@ export default function HomeScreen() {
     }
 
     setIsCompleting(true);
+    // 낙관적 업데이트: 서버 응답을 기다리지 않고 먼저 완료 상태로 표시하고, 실패하면 이전 상태로 되돌린다.
+    const snapshot = useAppStore.getState().applyOptimisticCompletion(expression.id);
 
     try {
       await completeCurrentContent(expression.id);
-      await syncNow();
-      await syncWidgetFromStore();
     } catch (error) {
+      // 완료 요청 자체가 실패한 경우에만 되돌린다.
+      useAppStore.getState().revertOptimisticCompletion(snapshot);
       Alert.alert(
         '학습 완료 실패',
         error instanceof Error ? error.message : '학습 완료를 저장하지 못했습니다.'
       );
+      setIsCompleting(false);
+      return;
+    }
+
+    try {
+      // 완료는 서버에 이미 반영됐으므로, 이후 동기화가 실패해도 낙관적 상태는 되돌리지 않는다.
+      await syncNow();
+      await syncWidgetFromStore();
+    } catch (error) {
+      console.warn('학습 완료 후 동기화에 실패했습니다.', error);
     } finally {
       setIsCompleting(false);
     }
@@ -221,34 +258,44 @@ export default function HomeScreen() {
           <Text style={styles.historyHint}>아래로 내려서 확인해요</Text>
         </View>
 
-        {historyExpressions.map(({ daysAgo, expression: historyExpression }) => {
-          const historyExpressionIsSaved =
-            favoriteExpressionIds.includes(historyExpression.id) ||
-            (savedExpressionCategoryIds[String(historyExpression.id)]?.length ?? 0) > 0;
+        {visibleHistory.length === 0 ? (
+          <Text style={styles.historyEmptyText}>아직 이전에 학습한 문장이 없어요.</Text>
+        ) : (
+          visibleHistory.map(({ expressionId, daysAgo }) => {
+            const historyExpression = getExpressionById(expressionId);
 
-          return (
-            <View key={daysAgo} style={styles.historyItem}>
-              <Text style={styles.historyDate}>{getHistoryDateLabel(daysAgo)}</Text>
-              <ExpressionCard
-                compact
-                expression={historyExpression}
-                isFavorite={historyExpressionIsSaved}
-                onFavoritePress={() => setCategoryModalExpressionId(historyExpression.id)}
-                showSaveControls={false}
-                cardPressEnabled={false}
-                detailLabel="이전 문장 자세히 보기"
-                onOpenDetail={() =>
-                  router.push({
-                    pathname: '/expression/[id]',
-                    params: { id: String(historyExpression.id) }
-                  })
-                }
-              />
-            </View>
-          );
-        })}
+            if (!historyExpression) {
+              return null;
+            }
 
-        {!isPremium ? (
+            const historyExpressionIsSaved =
+              favoriteExpressionIds.includes(historyExpression.id) ||
+              (savedExpressionCategoryIds[String(historyExpression.id)]?.length ?? 0) > 0;
+
+            return (
+              <View key={historyExpression.id} style={styles.historyItem}>
+                <Text style={styles.historyDate}>{getHistoryDateLabel(daysAgo)}</Text>
+                <ExpressionCard
+                  compact
+                  expression={historyExpression}
+                  isFavorite={historyExpressionIsSaved}
+                  onFavoritePress={() => setCategoryModalExpressionId(historyExpression.id)}
+                  showSaveControls={false}
+                  cardPressEnabled={false}
+                  detailLabel="이전 문장 자세히 보기"
+                  onOpenDetail={() =>
+                    router.push({
+                      pathname: '/expression/[id]',
+                      params: { id: String(historyExpression.id) }
+                    })
+                  }
+                />
+              </View>
+            );
+          })
+        )}
+
+        {!isPremium && pastHistory.length > visibleHistoryCount ? (
           <Pressable style={styles.historyLock} onPress={() => router.push('/(tabs)/settings')}>
             <Text style={styles.historyLockKicker}>Premium</Text>
             <Text style={styles.historyLockTitle}>3일보다 이전 문장도 이어서 보기</Text>
@@ -351,6 +398,13 @@ const createStyles = (colors: AppTheme) =>
       fontWeight: '800',
       marginBottom: 10,
       marginLeft: 4
+    },
+    historyEmptyText: {
+      color: colors.textMuted,
+      fontSize: 14,
+      fontWeight: '700',
+      paddingVertical: 12,
+      textAlign: 'center'
     },
     historyHeader: {
       alignItems: 'flex-end',

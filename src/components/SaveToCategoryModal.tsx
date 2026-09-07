@@ -51,22 +51,36 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
       return;
     }
 
+    const wasSaved = savedCategoryIds.includes(categoryId);
+    // 낙관적 업데이트: 네트워크 응답을 기다리지 않고 먼저 체크 상태를 바꾸고, 실패하면 되돌린다.
+    const snapshot = useAppStore.getState().applyOptimisticCategoryToggle(expressionId, categoryId);
     setIsSaving(true);
+
     try {
-      if (savedCategoryIds.includes(categoryId)) {
+      if (wasSaved) {
         await removeContentFromCategory(session.user.id, expressionId, categoryId, categories);
       } else {
         await saveContentToCategory(session.user.id, expressionId, categoryId, categories);
       }
-      await syncNow();
-      onClose();
     } catch (error) {
+      // 저장/해제 요청 자체가 실패한 경우에만 되돌린다.
+      useAppStore.getState().revertOptimisticCategoryToggle(snapshot);
       Alert.alert(
         '저장 실패',
         error instanceof Error ? error.message : '문장 저장 위치를 변경하지 못했습니다.'
       );
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      // 변경 사항은 서버에 이미 반영됐으므로, 이후 동기화가 실패해도 낙관적 상태는 되돌리지 않는다.
+      await syncNow();
+    } catch (error) {
+      console.warn('저장 위치 변경 후 동기화에 실패했습니다.', error);
     } finally {
       setIsSaving(false);
+      onClose();
     }
   };
 

@@ -37,6 +37,7 @@ const mockLoadCloudLearningState = jest.mocked(loadCloudLearningState);
 const snapshot: LearningStateSnapshot = {
   currentExpressionId: 1,
   completedExpressionIds: [],
+  completedHistory: [],
   favoriteExpressionIds: [],
   savedCategories: [],
   savedExpressionCategoryIds: {},

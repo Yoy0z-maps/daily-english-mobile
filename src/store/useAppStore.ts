@@ -4,6 +4,16 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { LearningStateSnapshot } from '@/sync/learningSync';
 
+type CompletionSnapshot = Pick<
+  LearningStateSnapshot,
+  'completedExpressionIds' | 'completedHistory' | 'lastCompletedDate' | 'streak' | 'longestStreak' | 'totalCompleted'
+>;
+
+type SavedMembershipSnapshot = Pick<
+  LearningStateSnapshot,
+  'favoriteExpressionIds' | 'savedExpressionCategoryIds'
+>;
+
 export const DEFAULT_SAVED_CATEGORY_ID = 'default';
 
 export type SavedCategory = {
@@ -27,6 +37,13 @@ type AppActions = {
   toggleNotifications: () => void;
   markHydrated: () => void;
   enterAdminMode: () => void;
+  applyOptimisticCompletion: (expressionId: number) => CompletionSnapshot;
+  revertOptimisticCompletion: (snapshot: CompletionSnapshot) => void;
+  applyOptimisticCategoryToggle: (
+    expressionId: number,
+    categoryId: string
+  ) => SavedMembershipSnapshot;
+  revertOptimisticCategoryToggle: (snapshot: SavedMembershipSnapshot) => void;
 };
 
 type InternalState = {
@@ -44,6 +61,7 @@ export const defaultSavedCategory: SavedCategory = {
 const emptyLearningState: LearningStateSnapshot = {
   currentExpressionId: 0,
   completedExpressionIds: [],
+  completedHistory: [],
   favoriteExpressionIds: [],
   savedCategories: [defaultSavedCategory],
   savedExpressionCategoryIds: {},
@@ -71,7 +89,7 @@ const ensureDefaultCategory = (categories: SavedCategory[] = []) => {
 
 export const useAppStore = create<AppStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...emptyLearningState,
       hasCompletedOnboarding: false,
       isDarkMode: false,
@@ -92,7 +110,75 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({ notificationsEnabled: !state.notificationsEnabled })),
       markHydrated: () => set({ hasHydrated: true }),
       // 심사용 데모 계정 진입 — 실제 백엔드 세션 없이 로컬 상태만으로 홈 화면 접근을 허용한다.
-      enterAdminMode: () => set({ isAdminMode: true, hasCompletedOnboarding: true })
+      enterAdminMode: () => set({ isAdminMode: true, hasCompletedOnboarding: true }),
+      // 낙관적 업데이트: 서버 응답을 기다리지 않고 먼저 화면을 갱신하고, 실패하면 이 스냅샷으로 되돌린다.
+      applyOptimisticCompletion: (expressionId) => {
+        const state = get();
+        const snapshot: CompletionSnapshot = {
+          completedExpressionIds: state.completedExpressionIds,
+          completedHistory: state.completedHistory,
+          lastCompletedDate: state.lastCompletedDate,
+          streak: state.streak,
+          longestStreak: state.longestStreak,
+          totalCompleted: state.totalCompleted
+        };
+
+        const todayKey = getLocalDateKey();
+        const yesterdayKey = getLocalDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
+        const nextStreak =
+          state.lastCompletedDate === todayKey
+            ? state.streak
+            : state.lastCompletedDate === yesterdayKey
+              ? state.streak + 1
+              : 1;
+
+        set({
+          completedExpressionIds: state.completedExpressionIds.includes(expressionId)
+            ? state.completedExpressionIds
+            : [...state.completedExpressionIds, expressionId],
+          completedHistory: state.completedHistory.some(
+            (entry) => entry.expressionId === expressionId
+          )
+            ? state.completedHistory
+            : [{ expressionId, completedDate: todayKey }, ...state.completedHistory],
+          lastCompletedDate: todayKey,
+          streak: nextStreak,
+          longestStreak: Math.max(state.longestStreak, nextStreak),
+          totalCompleted: state.totalCompleted + 1
+        });
+
+        return snapshot;
+      },
+      revertOptimisticCompletion: (snapshot) => set(snapshot),
+      applyOptimisticCategoryToggle: (expressionId, categoryId) => {
+        const state = get();
+        const snapshot: SavedMembershipSnapshot = {
+          favoriteExpressionIds: state.favoriteExpressionIds,
+          savedExpressionCategoryIds: state.savedExpressionCategoryIds
+        };
+
+        const key = String(expressionId);
+        const currentCategoryIds = state.savedExpressionCategoryIds[key] ?? [];
+        const isCurrentlySaved = currentCategoryIds.includes(categoryId);
+        const nextCategoryIds = isCurrentlySaved
+          ? currentCategoryIds.filter((id) => id !== categoryId)
+          : [...currentCategoryIds, categoryId];
+        const nextSavedExpressionCategoryIds = { ...state.savedExpressionCategoryIds };
+
+        if (nextCategoryIds.length > 0) {
+          nextSavedExpressionCategoryIds[key] = nextCategoryIds;
+        } else {
+          delete nextSavedExpressionCategoryIds[key];
+        }
+
+        set({
+          savedExpressionCategoryIds: nextSavedExpressionCategoryIds,
+          favoriteExpressionIds: Object.keys(nextSavedExpressionCategoryIds).map(Number)
+        });
+
+        return snapshot;
+      },
+      revertOptimisticCategoryToggle: (snapshot) => set(snapshot)
     }),
     {
       name: 'daily-english-device-settings-v1',

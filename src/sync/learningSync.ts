@@ -9,9 +9,15 @@ export type SyncedSavedCategory = {
   createdAt: string;
 };
 
+export type CompletedHistoryEntry = {
+  expressionId: number;
+  completedDate: string;
+};
+
 export type LearningStateSnapshot = {
   currentExpressionId: number;
   completedExpressionIds: number[];
+  completedHistory: CompletedHistoryEntry[];
   favoriteExpressionIds: number[];
   savedCategories: SyncedSavedCategory[];
   savedExpressionCategoryIds: Record<string, string[]>;
@@ -38,6 +44,11 @@ export type ReviewAnswerResult = {
 type ContentRow = {
   id: number;
   content_index: number | null;
+};
+
+type LearningLogRow = {
+  content_index: number;
+  completed_date: string;
 };
 
 type CategoryRow = {
@@ -191,9 +202,9 @@ export const loadCloudLearningState = async (userId: string): Promise<LearningSt
     supabase.rpc('get_learning_dashboard').maybeSingle(),
     supabase
       .from('learning_logs')
-      .select('content_index')
+      .select('content_index, completed_date')
       .eq('user_id', userId)
-      .order('completed_date'),
+      .order('completed_date', { ascending: false }),
     supabase
       .from('favorite_categories')
       .select('id, name, created_at')
@@ -256,12 +267,17 @@ export const loadCloudLearningState = async (userId: string): Promise<LearningSt
   });
 
   const dashboard = dashboardResult.data as LearningDashboardRow | null;
+  const learningLogRows = (learningLogResult.data ?? []) as LearningLogRow[];
 
   return {
     currentExpressionId: Number(dashboard?.current_content_index ?? 0),
-    completedExpressionIds: (learningLogResult.data ?? [])
+    completedExpressionIds: learningLogRows
       .map((log) => Number(log.content_index))
       .filter(Number.isFinite),
+    // completed_date 내림차순(최신순)으로 정렬해서 받아온 순서를 그대로 보존한다 — "이전 문장" 목록이 최근 완료 순으로 보이도록.
+    completedHistory: learningLogRows
+      .map((log) => ({ expressionId: Number(log.content_index), completedDate: log.completed_date }))
+      .filter((entry): entry is CompletedHistoryEntry => Number.isFinite(entry.expressionId)),
     favoriteExpressionIds: Object.keys(savedExpressionCategoryIds).map(Number),
     savedCategories,
     savedExpressionCategoryIds,
