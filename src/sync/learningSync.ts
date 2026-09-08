@@ -403,14 +403,24 @@ export const loadReviewQueue = async (): Promise<ReviewQueueItem[]> => {
   }));
 };
 
+// Resolve all four choices in one request while the question is on screen.
+export const prepareReviewAnswerIds = async (expressionIds: number[]) => {
+  const { data, error } = await supabase.from('contents')
+    .select('id, content_index').eq('status', 'published')
+    .in('content_index', [...new Set(expressionIds)]);
+  throwIfError(error);
+  return buildContentMaps((data ?? []) as ContentRow[]).databaseIdByExpressionId;
+};
+
 export const submitReviewAnswer = async (
   expressionId: number,
   selectedExpressionId: number,
-  isCorrect: boolean
+  isCorrect: boolean,
+  preparedIds?: Map<number, number>
 ): Promise<ReviewAnswerResult> => {
   const [contentId, selectedContentId] = await Promise.all([
-    requireContentDatabaseId(expressionId),
-    requireContentDatabaseId(selectedExpressionId)
+    preparedIds?.get(expressionId) ?? requireContentDatabaseId(expressionId),
+    preparedIds?.get(selectedExpressionId) ?? requireContentDatabaseId(selectedExpressionId)
   ]);
   const { data, error } = await supabase
     .rpc('record_review_answer', {

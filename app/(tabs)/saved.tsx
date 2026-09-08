@@ -1,3 +1,5 @@
+import { createOptimisticCategory } from '@/sync/optimisticCategory';
+import { showToast } from '@/ui/Toast';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -16,7 +18,6 @@ import {
 } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
 import {
-  createCloudCategory,
   removeContentFromCategory
 } from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
@@ -112,19 +113,22 @@ export default function SavedScreen() {
     }
 
     setIsMutating(true);
+    const previousCategoryId = selectedCategoryId;
+    let optimisticId: string | undefined;
     try {
-      const categoryId = await createCloudCategory(session.user.id, newCategoryName);
-      await syncNow();
-      setSelectedCategoryId(categoryId);
+      const mutation = createOptimisticCategory(session.user.id, newCategoryName);
+      optimisticId = mutation.categoryId;
+      setSelectedCategoryId(mutation.categoryId);
       setNewCategoryName('');
       setIsCreateModalVisible(false);
+      const categoryId = await mutation.settled;
+      setSelectedCategoryId((current) => current === mutation.categoryId ? categoryId : current);
     } catch (error) {
-      Alert.alert(
-        '카테고리 생성 실패',
-        error instanceof Error ? error.message : '카테고리를 만들지 못했습니다.'
-      );
+      setSelectedCategoryId((current) => current === optimisticId ? previousCategoryId : current);
+      showToast(error instanceof Error ? error.message : '카테고리를 만들지 못했습니다. 다시 시도해주세요.');
     } finally {
       setIsMutating(false);
+      void syncNow();
     }
   };
 

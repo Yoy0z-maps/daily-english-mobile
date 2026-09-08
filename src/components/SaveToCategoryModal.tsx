@@ -1,5 +1,8 @@
+import { beginLearningMutation } from '@/sync/pendingMutations';
+import { createOptimisticCategory } from '@/sync/optimisticCategory';
+import { showToast } from '@/ui/Toast';
 import { useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
 import {
@@ -9,7 +12,6 @@ import {
 } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
 import {
-  createCloudCategory,
   removeContentFromCategory,
   saveContentToCategory
 } from '@/sync/learningSync';
@@ -53,6 +55,8 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
 
     const wasSaved = savedCategoryIds.includes(categoryId);
     // 낙관적 업데이트: 네트워크 응답을 기다리지 않고 먼저 체크 상태를 바꾸고, 실패하면 되돌린다.
+    const finishMutation = beginLearningMutation();
+    const sessionRevision = useAppStore.getState().sessionRevision;
     const snapshot = useAppStore.getState().applyOptimisticCategoryToggle(expressionId, categoryId);
     setIsSaving(true);
 
@@ -64,13 +68,15 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
       }
     } catch (error) {
       // 저장/해제 요청 자체가 실패한 경우에만 되돌린다.
-      useAppStore.getState().revertOptimisticCategoryToggle(snapshot);
-      Alert.alert(
-        '저장 실패',
-        error instanceof Error ? error.message : '문장 저장 위치를 변경하지 못했습니다.'
-      );
+      if (useAppStore.getState().sessionRevision === sessionRevision) {
+        useAppStore.getState().revertOptimisticCategoryToggle(snapshot);
+        onClose();
+        showToast('문장 저장 위치를 변경하지 못해 되돌렸어요. 다시 시도해주세요.');
+      }
       setIsSaving(false);
       return;
+    } finally {
+      finishMutation();
     }
 
     try {
@@ -91,34 +97,15 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
 
     setIsSaving(true);
     try {
-      const categoryId = await createCloudCategory(session.user.id, newCategoryName);
-      const trimmedCategoryName = newCategoryName.trim();
-      const categoriesWithNewCategory = categories.some((category) => category.id === categoryId)
-        ? categories
-        : [
-            ...categories,
-            {
-              id: categoryId,
-              name: trimmedCategoryName,
-              createdAt: new Date().toISOString()
-            }
-          ];
-      await saveContentToCategory(
-        session.user.id,
-        expressionId,
-        categoryId,
-        categoriesWithNewCategory
-      );
-      await syncNow();
+      const mutation = createOptimisticCategory(session.user.id, newCategoryName, expressionId);
       setNewCategoryName('');
       onClose();
+      await mutation.settled;
     } catch (error) {
-      Alert.alert(
-        '저장 실패',
-        error instanceof Error ? error.message : '카테고리를 만들고 저장하지 못했습니다.'
-      );
+      showToast(error instanceof Error ? error.message : '카테고리를 만들고 저장하지 못했습니다. 다시 시도해주세요.');
     } finally {
       setIsSaving(false);
+      void syncNow();
     }
   };
 

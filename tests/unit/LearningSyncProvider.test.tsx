@@ -1,3 +1,5 @@
+import { beginLearningMutation } from '@/sync/pendingMutations';
+import { useAppStore } from '@/store/useAppStore';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Pressable, Text, View } from 'react-native';
 
@@ -112,4 +114,20 @@ describe('LearningSyncProvider', () => {
       resolveBackgroundSync(snapshot);
     });
   });
+});
+
+
+it('discards a stale sync response and refetches after an optimistic write settles', async () => {
+  let resolveStale!: (value: LearningStateSnapshot) => void;
+  mockLoadCloudLearningState.mockImplementationOnce(() => new Promise((resolve) => { resolveStale = resolve; }));
+  const updated = { ...snapshot, totalCompleted: 1 };
+  mockLoadCloudLearningState.mockResolvedValueOnce(updated);
+  render(<LearningSyncProvider><SyncProbe /></LearningSyncProvider>);
+  await waitFor(() => expect(mockLoadCloudLearningState).toHaveBeenCalledTimes(1));
+  const finish = beginLearningMutation();
+  await act(async () => { resolveStale(snapshot); });
+  expect(useAppStore.getState().applyCloudLearningState).not.toHaveBeenCalled();
+  await act(async () => { finish(); });
+  await waitFor(() => expect(useAppStore.getState().applyCloudLearningState).toHaveBeenCalledWith(updated));
+  expect(mockLoadCloudLearningState).toHaveBeenCalledTimes(2);
 });

@@ -14,6 +14,8 @@ import { useAuth } from '@/auth/AuthProvider';
 import { useAppStore } from '@/store/useAppStore';
 import { loadCloudLearningState } from '@/sync/learningSync';
 
+import { mutationRevision, waitForLearningMutations } from '@/sync/pendingMutations';
+
 type LearningSyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
 type LearningSyncContextValue = {
@@ -63,7 +65,16 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
       setErrorMessage(null);
 
       try {
-        const cloudState = await loadCloudLearningState(syncingUserId);
+        await waitForLearningMutations();
+        if (activeUserIdRef.current !== syncingUserId) return;
+        let revision = mutationRevision();
+        let cloudState = await loadCloudLearningState(syncingUserId);
+        while (revision !== mutationRevision()) {
+          await waitForLearningMutations();
+          if (activeUserIdRef.current !== syncingUserId) return;
+          revision = mutationRevision();
+          cloudState = await loadCloudLearningState(syncingUserId);
+        }
 
         if (activeUserIdRef.current !== syncingUserId) {
           return;
@@ -85,7 +96,7 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
         if (activeUserIdRef.current === syncingUserId) {
           setIsInitialSyncing(false);
         }
-        activeSyncRef.current = null;
+        if (activeUserIdRef.current === syncingUserId) activeSyncRef.current = null;
       }
     })();
 

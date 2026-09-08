@@ -1,5 +1,6 @@
+import { showToast } from '@/ui/Toast';
 import { router, Stack } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { useContent } from '@/content/ContentProvider';
@@ -8,6 +9,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
 import {
   loadReviewQueue,
+  prepareReviewAnswerIds,
   submitReviewAnswer,
   type ReviewAnswerResult,
   type ReviewQueueItem
@@ -29,6 +31,8 @@ export default function ReviewScreen() {
   const [answerResult, setAnswerResult] = useState<ReviewAnswerResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [score, setScore] = useState(0);
+  const submittingRef = useRef(false);
+  const preparedIdsRef = useRef(new Map<number, number>());
 
   useEffect(() => {
     let isActive = true;
@@ -85,34 +89,44 @@ export default function ReviewScreen() {
   );
   const isFinished = reviewExpressions.length > 0 && currentIndex >= reviewExpressions.length;
 
-  const handleSelect = async (id: number) => {
-    if (selectedId !== null || !currentExpression || isSubmitting) {
-      return;
+  useEffect(() => {
+    let active = true;
+    preparedIdsRef.current = new Map();
+    if (currentExpression) {
+      void prepareReviewAnswerIds([currentExpression.id, ...options.map((option) => option.id)])
+        .then((ids) => { if (active) preparedIdsRef.current = ids; })
+        .catch(() => { /* Submission falls back to resolving missing IDs. */ });
     }
+    return () => { active = false; };
+  }, [currentExpression, options]);
 
+  const handleSelect = async (id: number) => {
+    if (selectedId !== null || !currentExpression || submittingRef.current) return;
     const isCorrect = id === currentExpression.id;
+    submittingRef.current = true;
     setIsSubmitting(true);
+    setSelectedId(id);
+    setErrorMessage(null);
+    if (isCorrect) setScore((value) => value + 1);
 
     try {
-      const result = await submitReviewAnswer(currentExpression.id, id, isCorrect);
-      setSelectedId(id);
+      const result = await submitReviewAnswer(currentExpression.id, id, isCorrect, preparedIdsRef.current);
       setAnswerResult(result);
-
-      if (isCorrect) {
-        setScore((value) => value + 1);
-      }
-
-      await syncNow();
+      // Refresh the dashboard without delaying feedback or the next question.
+      void syncNow();
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : '복습 결과를 저장하지 못했습니다.'
-      );
+      setSelectedId(null);
+      setAnswerResult(null);
+      if (isCorrect) setScore((value) => value - 1);
+      showToast('복습 결과를 저장하지 못해 선택을 되돌렸어요. 다시 선택해주세요.');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
 
   const handleNext = () => {
+    if (submittingRef.current || selectedId === null) return;
     setSelectedId(null);
     setAnswerResult(null);
     setErrorMessage(null);
@@ -206,22 +220,21 @@ export default function ReviewScreen() {
           })}
         </View>
 
-        {isSubmitting ? <ActivityIndicator color={colors.primary} /> : null}
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
         {selectedId !== null ? (
           <View style={styles.feedbackCard}>
             <Text style={styles.feedbackTitle}>
-              {selectedId === currentExpression.id ? '정답이에요!' : '오답노트에 추가했어요'}
+              {selectedId === currentExpression.id ? '정답이에요!' : '아쉬워요. 정답을 확인해보세요'}
             </Text>
             <Text style={styles.feedbackText}>
               {answerResult?.mastered
                 ? '오답을 2회 연속 맞혀 마스터했습니다.'
                 : currentQueueItem?.isWrongNote && selectedId === currentExpression.id
-                  ? `마스터까지 정답 ${2 - (answerResult?.correctStreak ?? 0)}회 남았어요.`
+                  ? `마스터까지 정답 ${Math.max(0, 2 - (answerResult?.correctStreak ?? ((currentQueueItem?.correctStreak ?? 0) + 1)))}회 남았어요.`
                   : `${currentExpression.sentence} · ${currentExpression.exampleMeaning}`}
             </Text>
-            <Pressable style={styles.primaryButton} onPress={handleNext}>
+            <Pressable disabled={isSubmitting} style={[styles.primaryButton, isSubmitting && { opacity: 0.6 }]} onPress={handleNext}>
               <Text style={styles.primaryButtonText}>
                 {currentIndex + 1 === reviewExpressions.length ? '결과 보기' : '다음 문제'}
               </Text>

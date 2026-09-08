@@ -1,7 +1,9 @@
+import { beginLearningMutation } from '@/sync/pendingMutations';
+import { showToast } from '@/ui/Toast';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AdBanner } from '@/components/AdBanner';
 import { ExpressionCard } from '@/components/ExpressionCard';
@@ -140,19 +142,22 @@ export default function HomeScreen() {
 
     setIsCompleting(true);
     // 낙관적 업데이트: 서버 응답을 기다리지 않고 먼저 완료 상태로 표시하고, 실패하면 이전 상태로 되돌린다.
+    const finishMutation = beginLearningMutation();
+    const sessionRevision = useAppStore.getState().sessionRevision;
     const snapshot = useAppStore.getState().applyOptimisticCompletion(expression.id);
 
     try {
       await completeCurrentContent(expression.id);
     } catch (error) {
       // 완료 요청 자체가 실패한 경우에만 되돌린다.
-      useAppStore.getState().revertOptimisticCompletion(snapshot);
-      Alert.alert(
-        '학습 완료 실패',
-        error instanceof Error ? error.message : '학습 완료를 저장하지 못했습니다.'
-      );
+      if (useAppStore.getState().sessionRevision === sessionRevision) {
+        useAppStore.getState().revertOptimisticCompletion(snapshot);
+        showToast('학습 완료를 저장하지 못해 되돌렸어요. 다시 시도해주세요.');
+      }
       setIsCompleting(false);
       return;
+    } finally {
+      finishMutation();
     }
 
     try {

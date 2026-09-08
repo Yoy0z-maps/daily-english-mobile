@@ -48,6 +48,7 @@ type AppActions = {
 
 type InternalState = {
   hasHydrated: boolean;
+  sessionRevision: number;
 };
 
 export type AppStore = AppState & AppActions & InternalState;
@@ -96,12 +97,14 @@ export const useAppStore = create<AppStore>()(
       notificationsEnabled: true,
       isAdminMode: false,
       hasHydrated: false,
+      sessionRevision: 0,
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
       applyCloudLearningState: (snapshot) =>
         set({ ...snapshot, savedCategories: ensureDefaultCategory(snapshot.savedCategories) }),
       clearUserSession: () =>
         set({
           ...emptyLearningState,
+          sessionRevision: get().sessionRevision + 1,
           hasCompletedOnboarding: false,
           isAdminMode: false
         }),
