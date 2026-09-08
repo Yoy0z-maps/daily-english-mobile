@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import {
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -71,7 +72,9 @@ export default function OnboardingScreen() {
       router.replace("/");
     } catch (error) {
       setErrorMsg(
-        error instanceof Error ? error.message : "심사용 계정 로그인에 실패했습니다."
+        error instanceof Error
+          ? error.message
+          : "심사용 계정 로그인에 실패했습니다.",
       );
     } finally {
       setIsSubmitting(false);
@@ -128,7 +131,10 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         <View>
           <Pressable onPress={handleLogoPress} hitSlop={12}>
             <Text style={styles.eyebrow}>Daily English</Text>
@@ -214,9 +220,6 @@ export default function OnboardingScreen() {
         </View>
         {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
         <View style={styles.infoTextContainer}>
-          <Text style={styles.ageRequirementText}>
-            만 14세 이상만 이용할 수 있습니다.
-          </Text>
           <Text style={styles.infoText}>
             최초 로그인 시{" "}
             <Text
@@ -246,28 +249,19 @@ export default function OnboardingScreen() {
           </Text>
           <Text style={styles.infoText}>동의하는 것으로 간주합니다.</Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const createStyles = (colors: AppTheme) =>
   StyleSheet.create({
-    ageRequirementText: {
-      color: colors.text,
-      fontFamily: "WantedSans",
-      fontSize: 14,
-      fontWeight: "700",
-      marginBottom: 10,
-      textAlign: "center",
-    },
     cardList: {
       gap: 14,
       marginTop: 32,
     },
     container: {
-      flex: 1,
-      justifyContent: "space-between",
+      flexGrow: 1,
       padding: 24,
     },
     eyebrow: {
@@ -327,7 +321,7 @@ const createStyles = (colors: AppTheme) =>
       marginTop: 14,
     },
     snsSignUpContainer: {
-      marginTop: 100,
+      marginTop: 60,
       width: "100%",
     },
     snsSignUp: {
@@ -339,7 +333,7 @@ const createStyles = (colors: AppTheme) =>
     },
     authContainer: {
       marginTop: 20,
-      marginBottom: 28,
+      marginBottom: 20,
       justifyContent: "center",
       flexDirection: "row",
       columnGap: 16,
@@ -355,14 +349,12 @@ const createStyles = (colors: AppTheme) =>
     errorText: {
       textAlign: "center",
       width: "100%",
-      position: "absolute",
-      bottom: 200,
+      marginBottom: 12,
       color: "#EF4444",
       fontSize: 14,
     },
     infoTextContainer: {
-      marginTop: "auto",
-      marginBottom: 100,
+      marginBottom: 16,
       justifyContent: "center",
       flexDirection: "column",
       width: "100%",
