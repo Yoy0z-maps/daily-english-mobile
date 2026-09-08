@@ -1,3 +1,4 @@
+import { Toast } from "@/ui/Toast";
 import { Stack } from "expo-router";
 import { StudyReminderProvider } from "@/notifications/StudyReminderProvider";
 import { StatusBar } from "expo-status-bar";
@@ -20,7 +21,8 @@ function RootNavigator() {
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const isDarkMode = useAppStore((state) => state.isDarkMode);
   const isAdminMode = useAppStore((state) => state.isAdminMode);
-  const canEnterHome = isAuthReady && hasHydrated && (session !== null || isAdminMode);
+  const canEnterHome =
+    isAuthReady && hasHydrated && (session !== null || isAdminMode);
   const canEnterOnboarding = isAuthReady && hasHydrated && !canEnterHome;
 
   return (
@@ -49,12 +51,14 @@ function RootNavigator() {
             options={{
               title: "Expression",
               presentation: "card",
+              headerBackButtonDisplayMode: "minimal",
             }}
           />
           <Stack.Screen
             name="review"
             options={{
               title: "Review",
+              headerBackButtonDisplayMode: "minimal",
               presentation: "card",
             }}
           />
@@ -67,6 +71,7 @@ function RootNavigator() {
           />
         </Stack.Protected>
       </Stack>
+      <Toast />
       <StatusBar style={isDarkMode ? "light" : "dark"} />
     </AdMobProvider>
   );
