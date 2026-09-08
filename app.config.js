@@ -120,6 +120,7 @@ module.exports = {
     },
     plugins: [
       "expo-router",
+      "expo-notifications",
       "expo-apple-authentication",
       ...GOOGLE_SIGN_IN_PLUGINS,
       [

@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { StudyReminderProvider } from "@/notifications/StudyReminderProvider";
 import { StatusBar } from "expo-status-bar";
 
 import { AdMobProvider } from "@/ads/AdMobProvider";
@@ -77,7 +78,9 @@ export default function RootLayout() {
       <AuthProvider>
         <ContentProvider>
           <LearningSyncProvider>
-            <RootNavigator />
+            <StudyReminderProvider>
+              <RootNavigator />
+            </StudyReminderProvider>
           </LearningSyncProvider>
         </ContentProvider>
       </AuthProvider>

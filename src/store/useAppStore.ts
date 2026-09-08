@@ -34,7 +34,7 @@ type AppActions = {
   applyCloudLearningState: (snapshot: LearningStateSnapshot) => void;
   clearUserSession: () => void;
   toggleDarkMode: () => void;
-  toggleNotifications: () => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
   markHydrated: () => void;
   enterAdminMode: () => void;
   applyOptimisticCompletion: (expressionId: number) => CompletionSnapshot;
@@ -106,8 +106,7 @@ export const useAppStore = create<AppStore>()(
           isAdminMode: false
         }),
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
-      toggleNotifications: () =>
-        set((state) => ({ notificationsEnabled: !state.notificationsEnabled })),
+      setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
       markHydrated: () => set({ hasHydrated: true }),
       // 심사용 데모 계정 진입 — 실제 백엔드 세션 없이 로컬 상태만으로 홈 화면 접근을 허용한다.
       enterAdminMode: () => set({ isAdminMode: true, hasCompletedOnboarding: true }),
@@ -182,13 +181,21 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'daily-english-device-settings-v1',
+      version: 1,
+      // Preserve an explicit opt-out; new installations default to enabled.
+      migrate: (persisted) => ({
+        ...(persisted as Partial<AppState>),
+        notificationsEnabled: (persisted as Partial<AppState>)?.notificationsEnabled ?? true
+      }),
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         isDarkMode: state.isDarkMode,
         notificationsEnabled: state.notificationsEnabled
       }),
       merge: (persistedState, currentState) => {
-        const persisted = persistedState as Partial<AppState>;
+        const persisted = persistedState && typeof persistedState === 'object'
+          ? persistedState as Partial<AppState>
+          : {};
         return {
           ...currentState,
           isDarkMode: persisted.isDarkMode ?? currentState.isDarkMode,
@@ -196,8 +203,13 @@ export const useAppStore = create<AppStore>()(
             persisted.notificationsEnabled ?? currentState.notificationsEnabled
         };
       },
-      onRehydrateStorage: () => (state) => {
-        state?.markHydrated();
+      onRehydrateStorage: (initialState) => (state, error) => {
+        if (error) {
+          console.warn('기기 설정을 복원하지 못해 기본 설정으로 시작합니다.', error);
+        }
+        // Zustand passes no state when hydration fails. Startup must still
+        // finish so device-preference errors cannot block login or learning.
+        (state ?? initialState).markHydrated();
       }
     }
   )

@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { signOutSocialSession } from '@/auth/socialAuth';
 import { StreakCard } from '@/components/StreakCard';
+import { requestReminderPermission, supportsStudyReminders } from '@/notifications/studyReminders';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
@@ -47,7 +48,8 @@ export default function SettingsScreen() {
   const longestStreak = useAppStore((state) => state.longestStreak);
   const totalCompleted = useAppStore((state) => state.totalCompleted);
   const toggleDarkMode = useAppStore((state) => state.toggleDarkMode);
-  const toggleNotifications = useAppStore((state) => state.toggleNotifications);
+  const setNotificationsEnabled = useAppStore((state) => state.setNotificationsEnabled);
+  const [isRequestingNotifications, setIsRequestingNotifications] = useState(false);
   const clearUserSession = useAppStore((state) => state.clearUserSession);
   const isAdminMode = useAppStore((state) => state.isAdminMode);
   const providerSummary = getProviderSummary(session);
@@ -59,6 +61,26 @@ export default function SettingsScreen() {
         : syncStatus === 'error'
           ? '동기화 필요'
           : '대기 중';
+
+  const handleNotificationsChange = async (enabled: boolean) => {
+    if (!enabled) { setNotificationsEnabled(false); return; }
+    setIsRequestingNotifications(true);
+    try {
+      if (await requestReminderPermission()) {
+        setNotificationsEnabled(true);
+      } else {
+        setNotificationsEnabled(false);
+        Alert.alert('알림 권한이 필요해요', '기기 설정에서 오늘의 문장 알림을 허용한 뒤 다시 켜 주세요.', [
+          { text: '닫기', style: 'cancel' },
+          { text: '설정 열기', onPress: () => { void Linking.openSettings(); } }
+        ]);
+      }
+    } catch {
+      Alert.alert('알림 설정 실패', '알림 권한을 확인하지 못했어요. 다시 시도해 주세요.');
+    } finally {
+      setIsRequestingNotifications(false);
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert('로그아웃', '이 기기에 남은 사용자 학습 캐시도 함께 비울까요?', [
@@ -166,12 +188,13 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.settingRow}>
             <View style={styles.settingTextGroup}>
-              <Text style={styles.settingTitle}>Notifications</Text>
-              <Text style={styles.settingDescription}>학습 알림 mock 상태입니다.</Text>
+              <Text style={styles.settingTitle}>학습 알림</Text>
+              <Text style={styles.settingDescription}>{supportsStudyReminders ? '오늘 문장을 완료하지 않았다면 매일 저녁 8시에 알려드려요. (기기 시간 기준)' : '학습 알림은 iOS·Android 앱에서 사용할 수 있어요.'}</Text>
             </View>
             <Switch
               value={notificationsEnabled}
-              onValueChange={toggleNotifications}
+              onValueChange={(value) => { void handleNotificationsChange(value); }}
+              disabled={!supportsStudyReminders || !session || isRequestingNotifications}
               trackColor={{ false: colors.border, true: colors.primarySoft }}
               thumbColor={notificationsEnabled ? colors.primary : '#FFFFFF'}
             />
