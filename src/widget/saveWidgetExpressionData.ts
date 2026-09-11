@@ -1,3 +1,4 @@
+import { createWidgetPayload, type WidgetSchedule } from '@/widget/createWidgetPayload';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeModules, Platform } from 'react-native';
 
@@ -12,21 +13,14 @@ type DailyEnglishWidgetBridge = {
 
 const bridge = NativeModules.DailyEnglishWidgetBridge as DailyEnglishWidgetBridge | undefined;
 
-export const createWidgetPayload = (
-  expression: EnglishExpression,
-  streak: number
-): WidgetExpressionPayload => ({
-  id: expression.id,
-  sentence: expression.sentence,
-  meaning: expression.meaning,
-  keyword: expression.keyword,
-  keywordMeaning: expression.keywordMeaning,
-  level: expression.level,
-  streak
-});
+export { createWidgetPayload } from '@/widget/createWidgetPayload';
 
-export const saveWidgetExpressionData = async (expression: EnglishExpression, streak: number) => {
-  const payload = createWidgetPayload(expression, streak);
+export const saveWidgetExpressionData = async (
+  expression: EnglishExpression,
+  streak: number,
+  schedule: WidgetSchedule = {}
+) => {
+  const payload = createWidgetPayload(expression, streak, schedule);
 
   if (Platform.OS === 'ios' && bridge?.saveWidgetExpressionData) {
     return bridge.saveWidgetExpressionData(payload);

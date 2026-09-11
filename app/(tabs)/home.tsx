@@ -122,8 +122,13 @@ export default function HomeScreen() {
       return;
     }
 
-    void saveWidgetExpressionData(expression, streak).then(() => reloadAllWidgets());
-  }, [expression, hasHydrated, streak]);
+    void saveWidgetExpressionData(expression, streak, {
+      lastCompletedDate,
+      nextExpression: !isAdminMode && completedExpressionIds.includes(expression.id)
+        ? expressions[currentPosition + 1]
+        : undefined
+    }).then(() => reloadAllWidgets());
+  }, [expression, hasHydrated, streak, lastCompletedDate, completedExpressionIds, expressions, currentPosition, isAdminMode]);
 
   const syncWidgetFromStore = async () => {
     if (!expression) {
@@ -131,7 +136,12 @@ export default function HomeScreen() {
     }
 
     const state = useAppStore.getState();
-    await saveWidgetExpressionData(expression, state.streak);
+    await saveWidgetExpressionData(expression, state.streak, {
+      lastCompletedDate: state.lastCompletedDate,
+      nextExpression: !state.isAdminMode && state.completedExpressionIds.includes(expression.id)
+        ? expressions[currentPosition + 1]
+        : undefined
+    });
     await reloadAllWidgets();
   };
 

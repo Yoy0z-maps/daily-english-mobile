@@ -53,3 +53,45 @@ struct WidgetExpression: Codable, Hashable {
     URL(string: "dailyenglish:///home")!
   }
 }
+
+// Keep the current expression at the top level so existing installations remain readable.
+struct WidgetSchedule: Decodable {
+  let current: WidgetExpression
+  let nextExpression: WidgetExpression?
+  let advanceAfterDate: String?
+  let lastCompletedDate: String?
+
+  enum CodingKeys: String, CodingKey {
+    case nextExpression, advanceAfterDate, lastCompletedDate
+  }
+
+  init(from decoder: Decoder) throws {
+    current = try WidgetExpression(from: decoder)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    nextExpression = try container.decodeIfPresent(WidgetExpression.self, forKey: .nextExpression)
+    advanceAfterDate = try container.decodeIfPresent(String.self, forKey: .advanceAfterDate)
+    lastCompletedDate = try container.decodeIfPresent(String.self, forKey: .lastCompletedDate)
+  }
+
+  func expression(at date: Date, calendar: Calendar = .current) -> WidgetExpression {
+    let formatter = DateFormatter()
+    formatter.calendar = calendar
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = calendar.timeZone
+    formatter.dateFormat = "yyyy-MM-dd"
+    let today = formatter.string(from: date)
+    let selected: WidgetExpression
+    if let after = advanceAfterDate, today > after, let next = nextExpression {
+      selected = next
+    } else {
+      selected = current
+    }
+    let yesterday = calendar.date(byAdding: .day, value: -1, to: date) ?? date
+    let expired = lastCompletedDate.map { $0 < formatter.string(from: yesterday) } ?? false
+    return WidgetExpression(
+      id: selected.id, sentence: selected.sentence, meaning: selected.meaning,
+      keyword: selected.keyword, keywordMeaning: selected.keywordMeaning,
+      level: selected.level, streak: expired ? 0 : selected.streak
+    )
+  }
+}

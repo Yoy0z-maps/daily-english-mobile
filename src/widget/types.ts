@@ -5,4 +5,7 @@ export type WidgetExpressionPayload = Pick<
   'id' | 'sentence' | 'meaning' | 'keyword' | 'keywordMeaning' | 'level'
 > & {
   streak: number;
+  lastCompletedDate?: string | null;
+  advanceAfterDate?: string;
+  nextExpression?: Omit<WidgetExpressionPayload, 'nextExpression' | 'advanceAfterDate' | 'lastCompletedDate'>;
 };

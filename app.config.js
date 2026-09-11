@@ -6,7 +6,8 @@ const ADMOB_ANDROID_APP_ID =
   process.env.ADMOB_ANDROID_APP_ID ?? "ca-app-pub-3780332868290454~6325666938";
 const ADMOB_IOS_APP_ID =
   process.env.ADMOB_IOS_APP_ID ?? "ca-app-pub-3780332868290454~1675975485";
-const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
+const GOOGLE_IOS_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
 const GOOGLE_IOS_URL_SCHEME = GOOGLE_IOS_CLIENT_ID?.endsWith(
   ".apps.googleusercontent.com",
 )
@@ -91,7 +92,7 @@ module.exports = {
   expo: {
     name: "오늘의 문장",
     slug: "daily-english-sentence",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./src/assets/icon/icon.png",
     scheme: "dailyenglish",
@@ -105,6 +106,7 @@ module.exports = {
       bundleIdentifier: IOS_BUNDLE_IDENTIFIER,
       appleTeamId: APPLE_TEAM_ID,
       supportsTablet: true,
+      buildNumber: "6",
       entitlements: {
         "com.apple.security.application-groups": [APP_GROUP_IDENTIFIER],
       },
