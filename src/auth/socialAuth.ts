@@ -18,7 +18,6 @@ const REVIEW_ACCOUNT_EMAIL = 'app-review@dailyenglish.app';
 const REVIEW_ACCOUNT_PASSWORD = 'DailyEnglish-Review-2026!';
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
-let isGoogleSignInConfigured = false;
 
 type IdTokenProvider = 'Apple' | 'Google' | 'Kakao';
 type SupabaseIdTokenProvider = 'apple' | 'google' | 'kakao';
@@ -61,19 +60,19 @@ const getGoogleConfiguration = () => {
   };
 };
 
-const getGoogleSignInSdk = async () => {
+const getGoogleSignInSdk = async (nonce?: string) => {
   const configuration = getGoogleConfiguration();
 
   try {
-    const googleSignInSdk = await import('react-native-nitro-google-signin');
+    // Load only on native login so missing native modules do not block app startup.
+    const googleSignInSdk: typeof import('react-native-nitro-google-signin') =
+      require('react-native-nitro-google-signin');
 
-    if (!isGoogleSignInConfigured) {
-      googleSignInSdk.GoogleOneTapSignIn.configure({
-        ...configuration,
-        autoSelectOnSignIn: false
-      });
-      isGoogleSignInConfigured = true;
-    }
+    googleSignInSdk.GoogleOneTapSignIn.configure({
+      ...configuration,
+      autoSelectOnSignIn: false,
+      nonce
+    });
 
     return googleSignInSdk;
   } catch (error) {
@@ -257,24 +256,18 @@ export async function signInWithKakao() {
 }
 
 export async function signInWithGoogle() {
-  const {
-    GoogleOneTapSignIn,
-    isCancelledResponse,
-    isNoSavedCredentialFoundResponse,
-    isSuccessResponse
-  } = await getGoogleSignInSdk();
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
+    throw new Error('Google 로그인은 iOS 또는 Android 앱에서 이용해주세요.');
+  }
+
+  const rawNonce = Crypto.randomUUID();
+  const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+  const { GoogleOneTapSignIn, isCancelledResponse, isSuccessResponse } =
+    await getGoogleSignInSdk(hashedNonce);
 
   await GoogleOneTapSignIn.checkPlayServices(true);
-
-  let response = await GoogleOneTapSignIn.signIn();
-
-  if (isNoSavedCredentialFoundResponse(response)) {
-    response = await GoogleOneTapSignIn.createAccount();
-  }
-
-  if (isNoSavedCredentialFoundResponse(response)) {
-    response = await GoogleOneTapSignIn.presentExplicitSignIn();
-  }
+  // Always request a fresh token: iOS silent sign-in may return a cached token with an old nonce.
+  const response = await GoogleOneTapSignIn.presentExplicitSignIn();
 
   if (isCancelledResponse(response)) {
     const cancellationError = new Error('로그인이 취소되었습니다.');
@@ -288,7 +281,8 @@ export async function signInWithGoogle() {
 
   const { data, error } = await supabase.auth.signInWithIdToken({
     provider: 'google',
-    token: response.data.idToken
+    token: response.data.idToken,
+    nonce: rawNonce
   });
 
   if (error) {

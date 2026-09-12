@@ -14,7 +14,7 @@ import Svg, { Path } from "react-native-svg";
 import { useAppStore } from "@/store/useAppStore";
 import {
   signInWithApple,
-  // signInWithGoogle, // TODO: 구글 로그인 재활성화 시 주석 해제
+  signInWithGoogle,
   signInWithKakao,
   signInWithReviewAccount,
 } from "@/auth/socialAuth";
@@ -87,9 +87,8 @@ export default function OnboardingScreen() {
         return signInWithApple();
       case "KAKAO":
         return signInWithKakao();
-      // case "GOOGLE": // TODO: 구글 로그인 재활성화 시 주석 해제
-      //   return signInWithGoogle();
       case "GOOGLE":
+        return signInWithGoogle();
       case "NAVER":
         throw new Error(`${provider} 로그인은 아직 준비 중입니다.`);
     }
@@ -182,13 +181,15 @@ export default function OnboardingScreen() {
               />
             </Svg>
           </Pressable>
-          {/* TODO: 구글 로그인 재활성화 시 주석 해제 (Google Client ID 설정 필요)
           <Pressable
             onPress={() => {
               void handleSocialSignIn("GOOGLE");
             }}
             disabled={isSubmitting}
-            style={[styles.authCircleButton, { backgroundColor: "#4285F4" }]}
+            accessibilityRole="button"
+            accessibilityLabel="Google로 로그인"
+            accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }}
+            style={[styles.authCircleButton, { backgroundColor: "#4285F4" }, isSubmitting && { opacity: 0.55 }]}
           >
             <Svg width={20} height={20} viewBox="0 0 24 24">
               <Path
@@ -197,7 +198,6 @@ export default function OnboardingScreen() {
               />
             </Svg>
           </Pressable>
-          */}
           <Pressable
             onPress={() => {
               void handleSocialSignIn("KAKAO");

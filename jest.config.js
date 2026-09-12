@@ -1,6 +1,7 @@
 module.exports = {
   preset: 'jest-expo',
   clearMocks: true,
+  setupFiles: ['<rootDir>/tests/googleAuth.env.js'],
   collectCoverageFrom: [
     'src/learning/**/*.ts',
     'src/sync/learningSync.ts',

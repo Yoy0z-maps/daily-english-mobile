@@ -26,6 +26,10 @@ Android 네이티브 빌드는 JDK 17을 사용하세요.
 
 `ios/`와 `android/`는 Expo Prebuild가 생성하는 로컬 산출물이므로 Git에서 추적하지 않습니다. 처음 받거나 네이티브 설정이 바뀐 뒤에는 `npx expo prebuild`를 실행해 다시 생성하세요.
 
+## Google 로그인
+
+Google Cloud OAuth 클라이언트 생성, Supabase 제공자 활성화, 환경변수와 기기 검증 절차는 [Google 로그인 설정](docs/GOOGLE_LOGIN_SETUP.md)을 참고하세요.
+
 ## 주간 콘텐츠 운영
 
 LLM이 생성한 주간 콘텐츠의 검수, 수정, 승인, 반려, 게시와 Discord 알림 설정은 [`docs/CONTENT_REVIEW_AND_PUBLISH.md`](docs/CONTENT_REVIEW_AND_PUBLISH.md)를 참고하세요.
