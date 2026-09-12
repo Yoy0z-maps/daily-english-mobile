@@ -155,6 +155,8 @@ module.exports = {
             extraProguardRules:
               "-keep class com.google.android.gms.internal.consent_sdk.** { *; }",
             kotlinVersion: "2.1.20",
+            enableMinifyInReleaseBuilds: true,
+            enableShrinkResourcesInReleaseBuilds: true,
           },
         },
       ],
