@@ -15,9 +15,34 @@ expo-env.d.ts
 # @end expo-cli
 
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
 
+# Local signing credentials and native build configuration
 keystore.properties
-release.jks
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+local.properties
+
+# Installable build artifacts
+*.apk
+*.aab
+*.ipa
+
+# OS, editor, and Python cache files
+.DS_Store
+/.vscode/
+__pycache__/
+*.py[cod]
+
+# Personal algorithm exercises (not application source)
+/find.py
+/menu_renewal.py
+/new.py
+/p145.py
+/p296.py
+/test.py
+/tree_example.py
