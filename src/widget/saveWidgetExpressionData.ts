@@ -22,7 +22,7 @@ export const saveWidgetExpressionData = async (
 ) => {
   const payload = createWidgetPayload(expression, streak, schedule);
 
-  if (Platform.OS === 'ios' && bridge?.saveWidgetExpressionData) {
+  if ((Platform.OS === 'ios' || Platform.OS === 'android') && bridge?.saveWidgetExpressionData) {
     return bridge.saveWidgetExpressionData(payload);
   }
 

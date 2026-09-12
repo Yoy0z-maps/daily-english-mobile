@@ -1,0 +1,2 @@
+<?xml version="1.0" ?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android" android:minWidth="180dp" android:minHeight="48dp" android:targetCellWidth="3" android:targetCellHeight="1" android:updatePeriodMillis="1800000" android:initialLayout="@layout/daily_english_widget_inline" android:previewLayout="@layout/daily_english_widget_inline_preview" android:initialKeyguardLayout="@layout/daily_english_widget_inline" android:resizeMode="horizontal|vertical" android:widgetCategory="home_screen|keyguard"/>

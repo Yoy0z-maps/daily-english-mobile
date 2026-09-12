@@ -12,6 +12,7 @@ const DEFAULT_GROUP_IDENTIFIER = 'group.com.dailyenglish.widget';
 const appendUnique = (items, item) => Array.from(new Set([...(items ?? []), item]));
 
 const withDailyEnglishWidget = (config, props = {}) => {
+  config = require('./withAndroidDailyEnglishWidget')(config);
   const groupIdentifier = props.groupIdentifier ?? DEFAULT_GROUP_IDENTIFIER;
 
   config = withEntitlementsPlist(config, (pluginConfig) => {

@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<resources>
+    <color name="widget_start">#F7F8FF</color>
+    <color name="widget_end">#EEF2FF</color>
+    <color name="widget_accent">#4F7DFF</color>
+    <color name="widget_primary">#171923</color>
+    <color name="widget_secondary">#656773</color>
+    <color name="widget_chip">#1C4F7DFF</color>
+    <color name="widget_badge">#1F4F7DFF</color>
+    <color name="widget_orb_blue">#1A4F7DFF</color>
+    <color name="widget_orb_purple">#128C5CF5</color>
+</resources>

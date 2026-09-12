@@ -7,7 +7,7 @@ type DailyEnglishWidgetBridge = {
 const bridge = NativeModules.DailyEnglishWidgetBridge as DailyEnglishWidgetBridge | undefined;
 
 export const reloadAllWidgets = async () => {
-  if (Platform.OS !== 'ios' || !bridge?.reloadAllWidgets) {
+  if ((Platform.OS !== 'ios' && Platform.OS !== 'android') || !bridge?.reloadAllWidgets) {
     return false;
   }
 
