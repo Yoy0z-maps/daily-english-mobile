@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>오늘의 문장 — 인스타 피드 그리드 (3×3)</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+body { background:#0E1220; display:flex; align-items:flex-start;
+       justify-content:center; padding:32px; }
+body.export { padding:0; display:block; background:transparent; }
+
+/* 뷰포트: 타일 1칸 / 한 줄 / 전체 무랄 */
+.viewport { position:relative; overflow:hidden; flex:none; }
+.mural { position:relative; width:3240px; height:4050px; }
+.rowband { position:relative; width:3240px; height:1350px; overflow:hidden;
+           display:flex; }
+.cell { position:relative; width:1080px; height:1350px; flex:none;
+        padding:104px 86px; display:flex; flex-direction:column; }
+
+/* 인스타 그리드 미리보기용 격자선 (전체보기에서만) */
+.gridlines { position:absolute; inset:0; pointer-events:none; }
+.gridlines i { position:absolute; background:rgba(255,255,255,.55); }
+.gridlines i.v { top:0; bottom:0; width:12px; }
+.gridlines i.h { left:0; right:0; height:12px; }
+
+/* ══ ROW A — 브랜드 인트로 ══════════════════════════════════ */
+.row-a { background:linear-gradient(104deg,#8B5CF6 0%,#6D6BFF 42%,#4F7CFF 100%);
+         color:#fff; }
+.row-a .glow1 { position:absolute; width:1500px; height:1500px; border-radius:999px;
+  left:520px; top:-620px;
+  background:radial-gradient(circle,rgba(255,255,255,.26) 0%,rgba(255,255,255,0) 68%); }
+.row-a .glow2 { position:absolute; width:1900px; height:1900px; border-radius:999px;
+  left:1980px; top:180px;
+  background:radial-gradient(circle,rgba(255,255,255,.20) 0%,rgba(255,255,255,0) 66%); }
+/* 세 칸을 가로지르는 곡선 — 한 장의 그림처럼 보이게 하는 장치 */
+.row-a .sweep { position:absolute; left:-200px; right:-200px; bottom:-760px;
+  height:1500px; border-radius:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0)); }
+
+.a-logo { width:260px; height:260px; border-radius:72px; display:block; }
+.a-name { font-size:88px; font-weight:900; letter-spacing:-3px; margin-top:46px; }
+.a-sub  { font-size:34px; font-weight:800; letter-spacing:6px; opacity:.78;
+          margin-top:18px; }
+.a-head { font-size:132px; font-weight:900; line-height:1.14; letter-spacing:-5px; }
+.a-desc { font-size:38px; font-weight:700; line-height:1.55; opacity:.86;
+          margin-top:42px; }
+.a-list { display:flex; flex-direction:column; gap:30px; }
+.a-item { display:flex; align-items:center; gap:28px;
+          background:rgba(255,255,255,.15); border-radius:40px; padding:34px 38px; }
+.a-item b  { font-size:40px; font-weight:900; letter-spacing:-1px; }
+.a-item em { font-style:normal; font-size:28px; font-weight:700; opacity:.8;
+             display:block; margin-top:8px; }
+.a-num { width:78px; height:78px; border-radius:999px; background:#fff; color:#4F7CFF;
+         font-size:36px; font-weight:900; display:flex; align-items:center;
+         justify-content:center; flex:none; }
+.mid { flex:1; display:flex; flex-direction:column; justify-content:center; }
+
+/* ══ ROW B — 문장 카드 쇼케이스 ═════════════════════════════ */
+.row-b { background:linear-gradient(100deg,#E9EEFF 0%,#F7F8FF 28%,
+         #F7F8FF 72%,#E9EEFF 100%); }
+.row-b .glowc { position:absolute; left:120px; top:-520px;
+  width:3000px; height:2300px; border-radius:50%;
+  background:radial-gradient(ellipse,rgba(79,124,255,.26) 0%,rgba(139,92,246,.13) 46%,rgba(247,248,255,0) 72%); }
+/* 세 칸을 관통하는 가로 리본 */
+.row-b .ribbon { position:absolute; left:0; right:0; top:196px; height:92px;
+  background:linear-gradient(90deg,rgba(223,231,255,0),rgba(223,231,255,.96) 9%,
+             rgba(223,231,255,.96) 91%,rgba(223,231,255,0)); }
+.row-b .ribbon span { position:absolute; top:0; line-height:92px; font-size:32px;
+  font-weight:900; color:var(--primary); letter-spacing:2.5px; white-space:nowrap; }
+/* 카드가 올라앉는 연속 선반 — 타일 경계를 넘어 이어집니다 */
+.row-b .shelf { position:absolute; left:-80px; right:-80px; top:604px; height:478px;
+  border-radius:260px;
+  background:linear-gradient(90deg,rgba(203,216,255,0),#C9D7FF 7%,
+             #D5C9FF 50%,#C9D7FF 93%,rgba(203,216,255,0)); }
+.row-b .thread { position:absolute; left:0; right:0; top:840px; height:6px;
+  background:repeating-linear-gradient(90deg,rgba(79,124,255,.55) 0 28px,
+             rgba(79,124,255,0) 28px 56px); }
+
+.pcard { position:absolute; left:78px; right:78px; top:452px; height:582px;
+         background:#fff; border:3px solid var(--border); border-radius:64px;
+         padding:58px 54px; overflow:hidden;
+         box-shadow:0 34px 70px rgba(31,42,68,.14); }
+.pcard .g { position:absolute; top:-150px; right:-120px; width:260px; height:260px;
+            border-radius:999px; background:var(--primary-soft); opacity:.6; }
+.p-badge { display:inline-flex; background:var(--primary-soft); color:var(--primary);
+           font-size:28px; font-weight:900; border-radius:999px; padding:15px 28px; }
+.p-en  { font-size:68px; font-weight:900; letter-spacing:-2.4px; line-height:1.14;
+         margin-top:32px; color:var(--text); }
+.p-ko  { font-size:35px; font-weight:800; color:var(--muted); margin-top:18px;
+         line-height:1.4; }
+.p-key { position:absolute; left:54px; right:54px; bottom:48px;
+         background:var(--primary-soft); border-radius:40px; padding:30px 34px; }
+.p-key i { font-style:normal; display:block; font-size:22px; font-weight:900;
+           color:var(--primary); letter-spacing:2.4px; }
+.p-key b { display:block; font-size:40px; font-weight:900; color:var(--text);
+           margin-top:10px; letter-spacing:-1px; }
+
+/* ══ ROW C — 기능 + CTA ════════════════════════════════════ */
+.row-c { background:linear-gradient(180deg,#F7F8FF 0%,#EFF2FF 100%); }
+.row-c .wave { position:absolute; left:-300px; right:-300px; top:-600px; height:1150px;
+  border-radius:50%; background:radial-gradient(ellipse,rgba(139,92,246,.18) 0%,
+  rgba(79,124,255,.11) 50%,rgba(238,242,255,0) 74%); }
+/* 세 칸을 관통하는 브랜드 띠 — 카드들이 이 위에 걸쳐 앉습니다 */
+.row-c .band { position:absolute; left:-200px; right:-200px; bottom:0; height:466px;
+  /* 세 칸을 완만하게 가로지르는 곡선 — 어느 한 칸만 봐도 어색하지 않도록 */
+  border-radius:50% 50% 0 0 / 150px 150px 0 0; background:var(--grad); }
+.row-c .marquee { position:absolute; left:0; right:0; bottom:46px; height:40px;
+  overflow:hidden; white-space:nowrap; font-size:28px; font-weight:900;
+  color:rgba(255,255,255,.62); letter-spacing:3px; }
+
+.c-eyebrow { font-size:30px; font-weight:900; letter-spacing:5px; color:var(--primary); }
+.c-title { font-size:62px; font-weight:900; letter-spacing:-2.4px; line-height:1.2;
+           margin-top:22px; color:var(--text); }
+.c-desc { font-size:31px; font-weight:700; color:var(--muted); line-height:1.5;
+          margin-top:20px; }
+
+.cbox { position:absolute; left:78px; right:78px; top:584px; height:590px;
+        border-radius:66px; display:flex; flex-direction:column;
+        justify-content:center; box-shadow:0 34px 70px rgba(31,42,68,.18); }
+
+/* 잠금화면 위젯 목업 */
+.lock { background:#0E1220; padding:52px 48px; color:#fff; }
+.lock-time { font-size:104px; font-weight:800; letter-spacing:-4px; text-align:center;
+             line-height:1; }
+.lock-date { font-size:27px; font-weight:700; opacity:.7; text-align:center;
+             margin-top:12px; }
+.lock-w { background:rgba(255,255,255,.16); border-radius:34px; padding:28px 30px;
+          margin-top:38px; }
+.lock-w i { font-style:normal; font-size:22px; font-weight:900; letter-spacing:2.4px;
+            color:#9FB6FF; }
+.lock-w b { display:block; font-size:38px; font-weight:900; margin-top:10px;
+            letter-spacing:-1.2px; }
+.lock-w span { display:block; font-size:25px; font-weight:700; opacity:.72;
+               margin-top:8px; }
+
+/* 스트릭 */
+.streak { background:#fff; border:3px solid var(--border); padding:48px 52px;
+          text-align:center; }
+.streak-n { font-size:178px; font-weight:900; line-height:1;
+            background:var(--grad); -webkit-background-clip:text;
+            background-clip:text; color:transparent; letter-spacing:-8px; }
+.streak-l { font-size:34px; font-weight:900; color:var(--text); margin-top:14px; }
+.streak-d { font-size:27px; font-weight:700; color:var(--muted); margin-top:10px; }
+.dots { display:flex; justify-content:center; gap:15px; margin-top:34px; }
+.dots i { width:44px; height:44px; border-radius:15px; background:var(--primary-soft); }
+.dots i.on { background:var(--primary); }
+
+/* CTA */
+.cta { background:#fff; border:3px solid var(--border); padding:48px 52px;
+       text-align:center; }
+.cta img { width:132px; height:132px; border-radius:38px; margin:0 auto; display:block; }
+.cta b { display:block; font-size:48px; font-weight:900; letter-spacing:-1.8px;
+         margin-top:24px; color:var(--text); }
+.cta span { display:block; font-size:28px; font-weight:700; color:var(--muted);
+            margin-top:14px; line-height:1.5; }
+.store { display:flex; gap:16px; justify-content:center; margin-top:34px; }
+.store em { font-style:normal; background:var(--grad); color:#fff; border-radius:999px;
+            padding:22px 32px; font-size:27px; font-weight:900; }
+</style>
+</head>
+<body>
+
+<div class="viewport" id="vp">
+  <div class="mural" id="mural">
+
+    <!-- ══════════ ROW A ══════════ -->
+    <div class="rowband row-a">
+      <div class="glow1"></div><div class="glow2"></div><div class="sweep"></div>
+
+      <div class="cell">
+        <div class="mid">
+          <img class="a-logo" src="assets/logo.png" alt="">
+          <div class="a-name">오늘의 문장</div>
+          <div class="a-sub">DAILY ENGLISH</div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <div class="mid">
+          <div class="a-head">하루<br>한 문장,<br>진짜 쓰는<br>영어.</div>
+          <div class="a-desc">교과서 문장 말고,<br>원어민이 오늘도 쓰는 표현만.</div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <div class="mid">
+          <div class="a-list">
+            <div class="a-item"><span class="a-num">1</span>
+              <div><b>매일 아침 한 문장</b><em>3분이면 오늘 치 끝</em></div></div>
+            <div class="a-item"><span class="a-num">2</span>
+              <div><b>잠금화면 위젯</b><em>폰 켤 때마다 복습</em></div></div>
+            <div class="a-item"><span class="a-num">3</span>
+              <div><b>카테고리별 저장</b><em>내 표현만 모아보기</em></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ ROW B ══════════ -->
+    <div class="rowband row-b">
+      <div class="glowc"></div>
+      <div class="shelf"></div><div class="thread"></div>
+      <div class="ribbon">
+        <span style="left:120px">이런 표현을 매일 하나씩 ·</span>
+        <span style="left:1180px">상황별로 바로 쓰는 문장 ·</span>
+        <span style="left:2250px">뜻 + 예문까지 한 장에</span>
+      </div>
+
+      <div class="cell">
+        <div class="pcard"><div class="g"></div>
+          <span class="p-badge">Daily</span>
+          <div class="p-en">I'm down for it.</div>
+          <div class="p-ko">나 그거 할래. / 나도 좋아.</div>
+          <div class="p-key"><i>KEY EXPRESSION</i><b>be down for</b></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <div class="pcard"><div class="g"></div>
+          <span class="p-badge">Business</span>
+          <div class="p-en">Let's circle back on this.</div>
+          <div class="p-ko">이건 나중에 다시 얘기하죠.</div>
+          <div class="p-key"><i>KEY EXPRESSION</i><b>circle back</b></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <div class="pcard"><div class="g"></div>
+          <span class="p-badge">Travel</span>
+          <div class="p-en">It's on me.</div>
+          <div class="p-ko">내가 낼게. (한턱낼게)</div>
+          <div class="p-key"><i>KEY EXPRESSION</i><b>It's on me</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ ROW C ══════════ -->
+    <div class="rowband row-c">
+      <div class="wave"></div><div class="band"></div>
+      <div class="marquee">
+        <span style="position:absolute;left:60px">@daily.english · 매일 한 문장, 진짜 쓰는 영어 · @daily.english · 매일 한 문장, 진짜 쓰는 영어 · @daily.english · 매일 한 문장, 진짜 쓰는 영어 · @daily.english · 매일 한 문장, 진짜 쓰는 영어</span>
+      </div>
+
+      <div class="cell">
+        <div class="c-eyebrow">WIDGET</div>
+        <div class="c-title">잠금화면에서<br>그냥 눈에 들어와요</div>
+        <div class="c-desc">따로 앱을 켜지 않아도<br>오늘의 문장이 먼저 보입니다.</div>
+        <div class="cbox lock">
+          <div class="lock-time">7:30</div>
+          <div class="lock-date">9월 23일 화요일</div>
+          <div class="lock-w"><i>오늘의 문장</i><b>I'm down for it.</b>
+            <span>나 그거 할래. / 나도 좋아.</span></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <div class="c-eyebrow">STREAK</div>
+        <div class="c-title">하루 3분이<br>습관이 됩니다</div>
+        <div class="c-desc">연속 기록이 쌓일수록<br>안 빼먹게 돼요.</div>
+        <div class="cbox streak">
+          <div class="streak-n">27</div>
+          <div class="streak-l">일 연속 학습 중</div>
+          <div class="streak-d">이번 주도 하루도 안 빠졌어요</div>
+          <div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i>
+            <i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+        </div>
+      </div>
+
+      <div class="cell">
+        <div class="c-eyebrow">START TODAY</div>
+        <div class="c-title">오늘 문장부터<br>시작해볼까요?</div>
+        <div class="cbox cta">
+          <img src="assets/logo.png" alt="">
+          <b>오늘의 문장</b>
+          <span>매일 한 문장, 진짜 쓰는 영어</span>
+          <div class="store"><em>App Store</em><em>Google Play</em></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="gridlines" id="gl" style="display:none">
+    <i class="v" style="left:1074px"></i><i class="v" style="left:2154px"></i>
+    <i class="h" style="top:1344px"></i><i class="h" style="top:2694px"></i>
+  </div>
+</div>
+
+<script>
+/* view=tile&i=1..9 | view=row&r=1..3 | view=mural (기본) */
+const q = new URLSearchParams(location.search);
+const view = q.get('view') || 'mural';
+const vp = document.getElementById('vp'), mural = document.getElementById('mural');
+if (q.get('export') === '1') document.body.classList.add('export');
+
+if (view === 'tile') {
+  const i = Math.min(9, Math.max(1, +(q.get('i') || 1)));
+  const col = (i - 1) % 3, row = Math.floor((i - 1) / 3);
+  vp.style.width = '1080px'; vp.style.height = '1350px';
+  mural.style.transform = `translate(${-col * 1080}px, ${-row * 1350}px)`;
+} else if (view === 'row') {
+  const r = Math.min(3, Math.max(1, +(q.get('r') || 1)));
+  vp.style.width = '3240px'; vp.style.height = '1350px';
+  mural.style.transform = `translateY(${-(r - 1) * 1350}px)`;
+} else {
+  // 전체 무랄을 1/3 로 축소하면 정확히 1080×1350
+  vp.style.width = '1080px'; vp.style.height = '1350px';
+  mural.style.transform = 'scale(0.33333)';
+  mural.style.transformOrigin = 'top left';
+  const gl = document.getElementById('gl');
+  gl.style.display = 'block';
+  gl.style.transform = 'scale(0.33333)';
+  gl.style.transformOrigin = 'top left';
+  gl.style.width = '3240px'; gl.style.height = '4050px';
+}
+document.fonts.ready.then(() => document.documentElement.dataset.ready = '1');
+</script>
+</body>
+</html>

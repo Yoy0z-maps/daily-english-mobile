@@ -1,3 +1,4 @@
+jest.mock('@/ads/useReviewExitAd', () => ({ useReviewExitAd: () => (next: () => void) => next() }));
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import ReviewScreen from '../../app/review';
 import { loadReviewQueue, prepareReviewAnswerIds, submitReviewAnswer } from '@/sync/learningSync';

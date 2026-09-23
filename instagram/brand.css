@@ -1,0 +1,120 @@
+/* ─────────────────────────────────────────────────────────────
+   오늘의 문장 — Instagram 에셋 공통 브랜드 토큰
+   값은 앱 소스 src/theme/colors.ts 와 동일하게 유지할 것.
+   ───────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('fonts/PretendardVariable.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: block;
+}
+
+:root {
+  /* lightTheme — colors.ts */
+  --bg:           #F7F8FF;
+  --surface:      #FFFFFF;
+  --surface-muted:#EEF2FF;
+  --text:         #141827;
+  --muted:        #6B7280;
+  --border:       #E4E7F2;
+  --primary:      #4F7CFF;
+  --primary-soft: #DFE7FF;
+  --purple:       #8B5CF6;
+
+  --grad: linear-gradient(210deg, #8B5CF6 0%, #6B78FF 45%, #4F7CFF 100%);
+
+  /* 1080 기준 타이포 스케일 (앱 dp × 2.4) */
+  --fs-sentence: 76px;
+  --fs-meaning:  40px;
+  --fs-keyword:  46px;
+  --fs-example:  38px;
+
+  --r-card: 62px;
+  --r-box:  44px;
+}
+
+[data-theme="dark"] {
+  --bg:           #0E1220;
+  --surface:      #171B2D;
+  --surface-muted:#242A42;
+  --text:         #F8FAFC;
+  --muted:        #AAB2C5;
+  --border:       #2A3148;
+  --primary:      #7FA0FF;
+  --primary-soft: #1E2B58;
+  --purple:       #B794F6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+/* ── 캔버스: 인스타 규격 ─────────────────────────────────────── */
+.canvas {
+  position: relative;
+  width: 1080px;
+  height: 1350px;              /* 4:5 — 인스타 피드/그리드 기본 */
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.canvas[data-ratio="1x1"] { height: 1080px; }
+
+/* 배경 글로우 (앱 홈 히어로와 같은 톤) */
+.blob { position: absolute; border-radius: 999px; }
+.blob-a { width: 1100px; height: 1100px; top: -420px; right: -380px;
+  background: radial-gradient(circle, rgba(79,124,255,.30) 0%,
+              rgba(79,124,255,.10) 42%, rgba(79,124,255,0) 68%); }
+.blob-b { width: 940px; height: 940px; bottom: -400px; left: -340px;
+  background: radial-gradient(circle, rgba(139,92,246,.26) 0%,
+              rgba(139,92,246,.09) 42%, rgba(139,92,246,0) 68%); }
+
+/* ── 브랜드 헤더 ─────────────────────────────────────────────── */
+.brand { position: relative; display: flex; align-items: center; gap: 22px; }
+.brand-logo { width: 86px; height: 86px; border-radius: 24px; display: block; }
+.brand-name { font-size: 34px; font-weight: 900; letter-spacing: -1px; }
+.brand-sub  { font-size: 24px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+.brand-spacer { flex: 1; }
+
+.daypill {
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: 999px; padding: 14px 28px;
+  font-size: 26px; font-weight: 900; color: var(--primary);
+  letter-spacing: .5px;
+}
+
+/* ── 알약 배지 ──────────────────────────────────────────────── */
+.pill { border-radius: 999px; font-weight: 900; line-height: 1; }
+.pill-cat { background: var(--primary-soft); color: var(--primary);
+            font-size: 28px; padding: 16px 28px; }
+.pill-lvl { background: var(--surface-muted); color: var(--muted);
+            font-size: 28px; padding: 16px 24px; }
+
+/* ── 카드 ───────────────────────────────────────────────────── */
+.cardwrap { position: relative; flex: 1; min-height: 0; display: flex; }
+/* html2canvas 가 box-shadow 를 렌더하지 않으므로 그림자는 실제 레이어로 */
+.card-shadow {
+  position: absolute; left: 14px; right: 14px; top: 26px; bottom: -20px;
+  background: rgba(79,124,255,.13); border-radius: var(--r-card);
+}
+.card {
+  position: relative; flex: 1; min-height: 0;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 58px 54px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.card-glow {
+  position: absolute; top: -168px; right: -132px;
+  width: 274px; height: 274px; border-radius: 999px;
+  background: var(--primary-soft); opacity: .55;
+}

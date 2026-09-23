@@ -1,7 +1,7 @@
 import { beginLearningMutation } from '@/sync/pendingMutations';
 import { createOptimisticCategory } from '@/sync/optimisticCategory';
 import { showToast } from '@/ui/Toast';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -31,6 +31,7 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
   const { syncNow } = useLearningSync();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const rawCategories = useAppStore((state) => state.savedCategories);
   const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
   const savedExpressionCategoryIds = useAppStore((state) => state.savedExpressionCategoryIds);
@@ -48,64 +49,61 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
     return favoriteExpressionIds.includes(expressionId) ? [DEFAULT_SAVED_CATEGORY_ID] : [];
   }, [expressionId, favoriteExpressionIds, savedExpressionCategoryIds]);
 
-  const handleCategoryPress = async (categoryId: string) => {
-    if (!session || isSaving) {
-      return;
-    }
+  const refresh = () => { void syncNow().catch((error) => console.warn('저장 후 동기화에 실패했습니다.', error)); };
 
-    const wasSaved = savedCategoryIds.includes(categoryId);
-    // 낙관적 업데이트: 네트워크 응답을 기다리지 않고 먼저 체크 상태를 바꾸고, 실패하면 되돌린다.
-    const finishMutation = beginLearningMutation();
-    const sessionRevision = useAppStore.getState().sessionRevision;
-    const snapshot = useAppStore.getState().applyOptimisticCategoryToggle(expressionId, categoryId);
+  const handleCategoryPress = async (categoryId: string, shouldSave = !savedCategoryIds.includes(categoryId), revision = useAppStore.getState().sessionRevision) => {
+    if (!session || savingRef.current || useAppStore.getState().sessionRevision !== revision) return;
+    savingRef.current = true;
     setIsSaving(true);
-
+    const finishMutation = beginLearningMutation();
+    const state = useAppStore.getState();
+    const currentIds = state.savedExpressionCategoryIds[String(expressionId)] ??
+      (state.favoriteExpressionIds.includes(expressionId) ? [DEFAULT_SAVED_CATEGORY_ID] : []);
+    const snapshot = currentIds.includes(categoryId) !== shouldSave
+      ? state.applyOptimisticCategoryToggle(expressionId, categoryId) : null;
+    onClose();
     try {
-      if (wasSaved) {
-        await removeContentFromCategory(session.user.id, expressionId, categoryId, categories);
-      } else {
-        await saveContentToCategory(session.user.id, expressionId, categoryId, categories);
+      if (shouldSave) await saveContentToCategory(session.user.id, expressionId, categoryId, categories);
+      else await removeContentFromCategory(session.user.id, expressionId, categoryId, categories);
+      if (useAppStore.getState().sessionRevision === revision) {
+        showToast(shouldSave ? '카테고리에 저장했어요.' : '카테고리에서 저장을 해제했어요.');
       }
-    } catch (error) {
-      // 저장/해제 요청 자체가 실패한 경우에만 되돌린다.
-      if (useAppStore.getState().sessionRevision === sessionRevision) {
-        useAppStore.getState().revertOptimisticCategoryToggle(snapshot);
-        onClose();
-        showToast('문장 저장 위치를 변경하지 못해 되돌렸어요. 다시 시도해주세요.');
+    } catch {
+      if (useAppStore.getState().sessionRevision === revision) {
+        if (snapshot) useAppStore.getState().revertOptimisticCategoryToggle(snapshot);
+        showToast('저장 위치를 변경하지 못했어요.', {
+          label: '다시 시도', onPress: () => { void handleCategoryPress(categoryId, shouldSave, revision); }
+        });
       }
-      setIsSaving(false);
-      return;
     } finally {
       finishMutation();
-    }
-
-    try {
-      // 변경 사항은 서버에 이미 반영됐으므로, 이후 동기화가 실패해도 낙관적 상태는 되돌리지 않는다.
-      await syncNow();
-    } catch (error) {
-      console.warn('저장 위치 변경 후 동기화에 실패했습니다.', error);
-    } finally {
+      savingRef.current = false;
       setIsSaving(false);
-      onClose();
+      refresh();
     }
   };
 
-  const handleCreateAndSave = async () => {
-    if (!session || isSaving) {
-      return;
-    }
-
+  const handleCreateAndSave = async (name = newCategoryName, revision = useAppStore.getState().sessionRevision) => {
+    if (!session || savingRef.current || useAppStore.getState().sessionRevision !== revision) return;
+    if (!name.trim()) { showToast('카테고리 이름을 입력해주세요.'); return; }
+    savingRef.current = true;
     setIsSaving(true);
     try {
-      const mutation = createOptimisticCategory(session.user.id, newCategoryName, expressionId);
+      const mutation = createOptimisticCategory(session.user.id, name, expressionId);
       setNewCategoryName('');
       onClose();
       await mutation.settled;
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : '카테고리를 만들고 저장하지 못했습니다. 다시 시도해주세요.');
+      if (useAppStore.getState().sessionRevision === revision) showToast('카테고리에 저장했어요.');
+    } catch {
+      if (useAppStore.getState().sessionRevision === revision) {
+        showToast('카테고리에 저장하지 못했어요.', {
+          label: '다시 시도', onPress: () => { void handleCreateAndSave(name, revision); }
+        });
+      }
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
-      void syncNow();
+      refresh();
     }
   };
 

@@ -1,19 +1,15 @@
 import { createOptimisticCategory } from '@/sync/optimisticCategory';
 import { showToast } from '@/ui/Toast';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useRewardedAd } from 'react-native-google-mobile-ads';
 
-import { useAdMob } from '@/ads/AdMobProvider';
-import { rewardedAdUnitId } from '@/ads/adUnits';
 import { useAuth } from '@/auth/AuthProvider';
 import { ExpressionCard } from '@/components/ExpressionCard';
 import { useContent } from '@/content/ContentProvider';
 import {
   DEFAULT_SAVED_CATEGORY_ID,
   defaultSavedCategory,
-  selectEffectiveIsPremium,
   useAppStore
 } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
@@ -29,13 +25,11 @@ export default function SavedScreen() {
   const { expressions: publishedExpressions } = useContent();
   const { session } = useAuth();
   const { syncNow } = useLearningSync();
-  const { isReady: isAdMobReady } = useAdMob();
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_SAVED_CATEGORY_ID);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isMutating, setIsMutating] = useState(false);
   const rawCategories = useAppStore((state) => state.savedCategories);
-  const isPremium = useAppStore(selectEffectiveIsPremium);
   const wrongAnswerCount = useAppStore((state) => state.wrongAnswerExpressionIds.length);
   const totalCompleted = useAppStore((state) => state.totalCompleted);
   const favoriteExpressionIds = useAppStore((state) => state.favoriteExpressionIds);
@@ -64,49 +58,6 @@ export default function SavedScreen() {
     () => publishedExpressions.filter((expression) => savedExpressionIds.includes(expression.id)),
     [publishedExpressions, savedExpressionIds]
   );
-  const pendingReviewCategoryId = useRef<string | null>(null);
-  const rewardedAd = useRewardedAd(!isPremium && isAdMobReady ? rewardedAdUnitId : null);
-
-  useEffect(() => {
-    if (!isPremium && isAdMobReady) {
-      rewardedAd.load();
-    }
-  }, [isAdMobReady, isPremium, rewardedAd.load]);
-
-  useEffect(() => {
-    if (!rewardedAd.isClosed) {
-      return;
-    }
-
-    const categoryId = pendingReviewCategoryId.current;
-    pendingReviewCategoryId.current = null;
-
-    if (rewardedAd.isEarnedReward && categoryId) {
-      router.push('/review');
-    }
-
-    if (!isPremium && isAdMobReady) {
-      rewardedAd.load();
-    }
-  }, [isAdMobReady, isPremium, rewardedAd.isClosed, rewardedAd.isEarnedReward, rewardedAd.load]);
-
-  useEffect(() => {
-    if (!rewardedAd.error) {
-      return;
-    }
-
-    console.warn('리워드 광고를 불러오지 못했습니다.', rewardedAd.error);
-
-    if (pendingReviewCategoryId.current) {
-      pendingReviewCategoryId.current = null;
-      Alert.alert('광고를 불러오지 못했어요', '네트워크 상태를 확인한 뒤 다시 시도해주세요.');
-
-      if (!isPremium && isAdMobReady) {
-        rewardedAd.load();
-      }
-    }
-  }, [isAdMobReady, isPremium, rewardedAd.error, rewardedAd.load]);
-
   const handleCreateCategory = async () => {
     if (!session || isMutating) {
       return;
@@ -162,23 +113,7 @@ export default function SavedScreen() {
       return;
     }
 
-    if (isPremium) {
-      router.push('/review');
-      return;
-    }
-
-    if (!isAdMobReady || !rewardedAd.isLoaded) {
-      Alert.alert('광고 준비 중', '리워드 광고를 불러오는 중입니다. 잠시 후 다시 눌러주세요.');
-
-      if (isAdMobReady) {
-        rewardedAd.load();
-      }
-
-      return;
-    }
-
-    pendingReviewCategoryId.current = selectedCategoryId;
-    rewardedAd.show();
+    router.push('/review');
   };
 
   return (
@@ -196,7 +131,7 @@ export default function SavedScreen() {
             onPress={handleReviewPress}
           >
             <Text style={styles.reviewButtonText}>
-              {isPremium ? '복습하기' : rewardedAd.isLoaded ? '광고 보고 복습하기' : '광고 준비 중…'}
+              복습하기
             </Text>
           </Pressable>
           <Pressable style={styles.noteButton} onPress={() => router.push('/wrong-note')}>

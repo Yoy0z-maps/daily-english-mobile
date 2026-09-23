@@ -38,11 +38,3 @@ local.properties
 __pycache__/
 *.py[cod]
 
-# Personal algorithm exercises (not application source)
-/find.py
-/menu_renewal.py
-/new.py
-/p145.py
-/p296.py
-/test.py
-/tree_example.py

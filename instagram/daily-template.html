@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>오늘의 문장 — 인스타 데일리 템플릿</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+/* ── 편집기 UI (내보내기에 포함되지 않음) ─────────────────────── */
+body { background:#0E1220; color:#F8FAFC; display:flex; min-height:100vh; }
+
+#editor {
+  width: 420px; flex: none; padding: 28px 24px 60px; overflow-y: auto;
+  height: 100vh; background:#141827; border-right:1px solid #2A3148;
+}
+#editor h1 { font-size:20px; font-weight:900; letter-spacing:-.4px; }
+#editor .hint { font-size:12.5px; color:#AAB2C5; margin-top:6px; line-height:1.6; }
+#editor label { display:block; font-size:12px; font-weight:800; color:#AAB2C5;
+                margin:18px 0 6px; letter-spacing:.3px; }
+#editor input, #editor textarea, #editor select {
+  width:100%; background:#0E1220; border:1px solid #2A3148; border-radius:10px;
+  color:#F8FAFC; font:inherit; font-size:14px; padding:10px 12px; resize:vertical;
+}
+#editor input:focus, #editor textarea:focus, #editor select:focus {
+  outline:none; border-color:#7FA0FF;
+}
+.row2 { display:flex; gap:10px; }
+.row2 > div { flex:1; }
+.btns { display:grid; gap:8px; margin-top:26px; }
+button {
+  font:inherit; font-size:14px; font-weight:800; border:0; border-radius:10px;
+  padding:12px 14px; cursor:pointer; background:#242A42; color:#F8FAFC;
+}
+button.primary { background:#4F7CFF; color:#fff; }
+button:hover { filter:brightness(1.12); }
+.tabs { display:flex; gap:6px; margin-top:22px; }
+.tabs button { flex:1; background:#0E1220; border:1px solid #2A3148; }
+.tabs button.on { background:#1E2B58; border-color:#7FA0FF; color:#CBD9FF; }
+.sep { height:1px; background:#2A3148; margin:24px 0 4px; }
+
+/* ── 미리보기 스테이지 ───────────────────────────────────────── */
+#stage { flex:1; display:flex; align-items:flex-start; justify-content:center;
+         padding:40px; overflow:auto; height:100vh; }
+#scaler { transform-origin: top center; }
+body.shooting #stage { position:fixed; left:-30000px; top:0; }
+
+/* CLI 렌더(headless Chrome)용 — ?export=1 */
+body.export { display:block; background:transparent; }
+body.export #editor { display:none; }
+body.export #stage { padding:0; height:auto; overflow:visible; display:block; }
+body.export #scaler { transform:none !important; height:auto !important; }
+.sheet { display:none; }
+.sheet.on { display:flex; }
+
+/* ── 캔버스 내부 (여기부터가 실제 이미지) ────────────────────── */
+.canvas { padding:72px; }
+.brand { margin-bottom:44px; }
+.row-badges { display:flex; align-items:center; gap:14px; margin-bottom:34px; }
+.bookmark { margin-left:auto; width:76px; height:76px; border-radius:999px;
+            background:var(--surface-muted); display:flex; align-items:center;
+            justify-content:center; }
+.bookmark svg { width:36px; height:36px; }
+
+.sentence { font-size:var(--fs-sentence); font-weight:900; letter-spacing:-2.2px;
+            line-height:1.16; overflow-wrap:break-word; }
+.meaning  { font-size:calc(40px * var(--bs,1)); font-weight:800; color:var(--muted);
+            line-height:1.42; margin-top:18px; }
+
+.box { border-radius:var(--r-box); padding:36px 38px; }
+.box.key { background:var(--primary-soft); margin-top:36px; }
+.key-label { font-size:calc(24px * var(--bs,1)); font-weight:900; color:var(--primary);
+             letter-spacing:2.6px; }
+.key-word  { font-size:calc(46px * var(--bs,1)); font-weight:900; margin-top:12px;
+             letter-spacing:-1px; }
+.key-mean  { font-size:calc(34px * var(--bs,1)); font-weight:800; color:var(--muted);
+             margin-top:10px; }
+
+.box.ex { background:var(--surface-muted); margin-top:22px; }
+.ex-en { font-size:calc(38px * var(--bs,1)); font-weight:800; line-height:1.45; }
+.ex-ko { font-size:calc(33px * var(--bs,1)); font-weight:600; color:var(--muted);
+         line-height:1.45; margin-top:12px; }
+.grow { flex:1; min-height:0; }
+.card > *:not(.grow) { flex:none; }
+
+.foot { display:flex; align-items:center; justify-content:space-between;
+        margin-top:42px; font-size:26px; font-weight:800; color:var(--muted); }
+.foot-r { color:var(--primary); font-weight:900; }
+
+/* ── 커버(1번째 장) 캔버스 ───────────────────────────────────── */
+.cover { background:var(--grad); color:#fff; padding:96px 84px; }
+.cover .blob-a { background:radial-gradient(circle,rgba(255,255,255,.22) 0%,
+                 rgba(255,255,255,.07) 45%,rgba(255,255,255,0) 70%); }
+.cover .blob-b { background:radial-gradient(circle,rgba(255,255,255,.18) 0%,
+                 rgba(255,255,255,.06) 45%,rgba(255,255,255,0) 70%); }
+/* 본문은 고정 영역 안에서 세로 중앙 정렬 — 자동 크기 계산의 기준이 됩니다 */
+.cover-body { position:absolute; left:84px; right:84px; top:268px; bottom:196px;
+              display:flex; flex-direction:column; align-items:flex-start;
+              justify-content:center; overflow:hidden; }
+.cover-top { position:relative; display:flex; align-items:center; gap:20px;
+             position:absolute; top:84px; left:84px; }
+.cover-top img { width:76px; height:76px; border-radius:22px;
+                 border:4px solid rgba(255,255,255,.45); }
+.cover-top span { font-size:30px; font-weight:900; letter-spacing:-.8px; }
+.cover-eyebrow { position:relative; font-size:28px; font-weight:900; letter-spacing:4px;
+                 opacity:.8; }
+.cover-sentence { position:relative; overflow-wrap:break-word; font-size:112px; font-weight:900; line-height:1.1;
+                  letter-spacing:-3px; word-spacing:6px; margin-top:26px; }
+.cover-meaning { position:relative; font-size:44px; font-weight:800; line-height:1.4;
+                 margin-top:34px; opacity:.92; }
+.cover-chip { position:relative; display:inline-flex; align-self:flex-start;
+              margin-top:52px; background:rgba(255,255,255,.18); border-radius:999px;
+              padding:20px 38px; font-size:30px; font-weight:900; letter-spacing:.4px; }
+.cover-foot { position:absolute; left:84px; right:84px; bottom:84px; display:flex;
+              justify-content:space-between; font-size:28px; font-weight:800; opacity:.85; }
+</style>
+</head>
+<body>
+
+<aside id="editor">
+  <h1>오늘의 문장 · 데일리 템플릿</h1>
+  <p class="hint">칸만 바꾸고 <b>PNG 저장</b>을 누르면 인스타에 바로 올릴 수 있는 1080×1350 이미지가 받아집니다. 입력값은 자동 저장돼요.</p>
+
+  <div class="tabs">
+    <button data-tab="full" class="on">본문 (뜻·예문)</button>
+    <button data-tab="cover">커버 (1번째 장)</button>
+  </div>
+
+  <label>오늘의 문장 (영어)</label>
+  <textarea rows="2" data-bind="sentence">I'm down for it.</textarea>
+
+  <label>뜻 (한국어)</label>
+  <textarea rows="2" data-bind="meaning">나 그거 할래. / 나도 좋아.</textarea>
+
+  <div class="sep"></div>
+
+  <label>핵심 표현</label>
+  <input data-bind="keyword" value="be down for">
+  <label>핵심 표현 뜻</label>
+  <input data-bind="keywordMeaning" value="~할 의향이 있다, ~에 찬성이다">
+
+  <label>예문 (영어)</label>
+  <textarea rows="2" data-bind="example">"Pizza tonight?" "I'm totally down for it."</textarea>
+  <label>예문 해석</label>
+  <textarea rows="2" data-bind="exampleMeaning">"오늘 저녁 피자 어때?" "완전 좋지."</textarea>
+
+  <div class="sep"></div>
+
+  <div class="row2">
+    <div><label>카테고리</label>
+      <select data-bind="category">
+        <option>Daily</option><option>Business</option><option>Travel</option>
+        <option>Developer</option><option>OPIc</option>
+      </select></div>
+    <div><label>레벨</label>
+      <select data-bind="level">
+        <option>A2</option><option selected>B1</option><option>B2</option><option>C1</option>
+      </select></div>
+  </div>
+
+  <div class="row2">
+    <div><label>DAY 표기</label><input data-bind="day" value="DAY 001"></div>
+    <div><label>계정 핸들</label><input data-bind="handle" value="@daily.english"></div>
+  </div>
+
+  <div class="row2">
+    <div><label>테마</label>
+      <select id="theme"><option value="light">라이트</option><option value="dark">다크</option></select></div>
+    <div><label>비율</label>
+      <select id="ratio"><option value="4x5">1080×1350 (4:5)</option><option value="1x1">1080×1080 (1:1)</option></select></div>
+  </div>
+
+  <div class="btns">
+    <button class="primary" id="dl">현재 장 PNG 저장</button>
+    <button id="dlAll">커버 + 본문 2장 모두 저장</button>
+    <button id="copy">입력값 JSON 복사</button>
+  </div>
+  <p class="hint" style="margin-top:14px">복사한 JSON을 <code>content/sentences.json</code> 에 모아두면 <code>node render.mjs daily</code> 로 여러 날짜를 한 번에 뽑을 수 있어요.</p>
+</aside>
+
+<main id="stage">
+  <div id="scaler">
+
+    <!-- ══ 본문 (뜻 + 예문) ══════════════════════════════════ -->
+    <section class="canvas sheet on" id="sheet-full" data-theme="light" data-ratio="4x5">
+      <div class="blob blob-a"></div>
+      <div class="blob blob-b"></div>
+
+      <header class="brand">
+        <img class="brand-logo" src="assets/logo.png" alt="">
+        <div>
+          <div class="brand-name">오늘의 문장</div>
+          <div class="brand-sub" data-v="handle"></div>
+        </div>
+        <div class="brand-spacer"></div>
+        <div class="daypill" data-v="day"></div>
+      </header>
+
+      <div class="cardwrap">
+        <div class="card-shadow"></div>
+        <div class="card" id="card">
+          <div class="card-glow"></div>
+          <div class="row-badges">
+            <span class="pill pill-cat" data-v="category"></span>
+            <span class="pill pill-lvl" data-v="level"></span>
+            <span class="bookmark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#4F7CFF" stroke-width="2.4"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              </svg>
+            </span>
+          </div>
+
+          <div class="sentence" data-v="sentence"></div>
+          <div class="meaning"  data-v="meaning"></div>
+
+          <div class="box key">
+            <div class="key-label">KEY EXPRESSION</div>
+            <div class="key-word" data-v="keyword"></div>
+            <div class="key-mean" data-v="keywordMeaning"></div>
+          </div>
+
+          <div class="box ex">
+            <div class="ex-en" data-v="example"></div>
+            <div class="ex-ko" data-v="exampleMeaning"></div>
+          </div>
+
+          <div class="grow"></div>
+        </div>
+      </div>
+
+      <footer class="foot">
+        <span>매일 한 문장, 진짜 쓰는 영어</span>
+        <span class="foot-r">앱에서 더 보기 →</span>
+      </footer>
+    </section>
+
+    <!-- ══ 커버 (스와이프 유도용 1번째 장) ═══════════════════ -->
+    <section class="canvas cover sheet" id="sheet-cover" data-ratio="4x5">
+      <div class="blob blob-a"></div>
+      <div class="blob blob-b"></div>
+
+      <div class="cover-top">
+        <img src="assets/logo.png" alt="">
+        <span>오늘의 문장</span>
+      </div>
+
+      <div class="cover-body">
+        <div class="cover-eyebrow" data-v="day"></div>
+        <div class="cover-sentence" data-v="sentence"></div>
+        <div class="cover-meaning" data-v="meaning"></div>
+        <div class="cover-chip">예문까지 보러가기 →</div>
+      </div>
+
+      <div class="cover-foot">
+        <span data-v="handle"></span>
+        <span data-v="category"></span>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="vendor/html2canvas.min.js"></script>
+<script>
+const KEYS = ['sentence','meaning','keyword','keywordMeaning','example',
+              'exampleMeaning','category','level','day','handle'];
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+let tab = 'full';
+
+/* ── 값 반영 ─────────────────────────────────────────────── */
+function apply() {
+  const data = {};
+  KEYS.forEach(k => {
+    const src = $(`[data-bind="${k}"]`);
+    data[k] = src.value;
+    $$(`[data-v="${k}"]`).forEach(n => n.textContent = src.value);
+  });
+  $('#sheet-full').dataset.theme = $('#theme').value;
+  $$('.canvas').forEach(c => c.dataset.ratio = $('#ratio').value);
+  localStorage.setItem('dailyIG', JSON.stringify(
+    {...data, theme: $('#theme').value, ratio: $('#ratio').value}));
+  fit();
+  layout();
+}
+
+/* ── 본문 카드 자동 맞춤: 넘치면 문장 → 본문 순으로 축소 ──── */
+function fit() {
+  const card = $('#card');
+  const s   = card.querySelector('.sentence');
+  const key = card.querySelector('.box.key');
+  const ex  = card.querySelector('.box.ex');
+  // 카드 자체의 scrollWidth 는 장식용 글로우 때문에 항상 넘치므로 쓰면 안 됩니다.
+  const over = () => card.scrollHeight > card.clientHeight + 1
+                  || s.scrollWidth > s.clientWidth + 1;
+  // 마지막 요소 아래로 남는 여백.
+  // 미리보기는 transform: scale() 로 축소돼 있어 getBoundingClientRect 를 쓰면 안 됩니다.
+  const slack = () => {
+    const cs = getComputedStyle(card);
+    const bt = parseFloat(cs.borderTopWidth), pb = parseFloat(cs.paddingBottom);
+    return (bt + card.clientHeight - pb) - (ex.offsetTop + ex.offsetHeight);
+  };
+
+  card.style.setProperty('--bs', 1);
+  key.style.marginTop = '36px';
+  ex.style.marginTop = '22px';
+
+  let size = 76; s.style.fontSize = size + 'px';
+  while (over() && size > 46) { size -= 2; s.style.fontSize = size + 'px'; }      // 넘치면 축소
+  while (!over() && size < 108 && slack() > 30) {                                 // 남으면 확대
+    size += 2; s.style.fontSize = size + 'px';
+  }
+  if (over()) { size -= 2; s.style.fontSize = size + 'px'; }
+  let bs = 1;
+  while (over() && bs > 0.78) {                                                   // 그래도 넘치면 본문 축소
+    bs = +(bs - 0.02).toFixed(2); card.style.setProperty('--bs', bs);
+  }
+  // 남은 여백을 박스 사이로 나눠 위아래 균형을 맞춥니다
+  const gap = slack();
+  if (gap > 24) {
+    key.style.marginTop = Math.round(36 + gap * 0.42) + 'px';
+    ex.style.marginTop  = Math.round(22 + gap * 0.22) + 'px';
+  }
+
+  // 커버 문장 (.cover-body 안에서만 측정 — 배경 글로우는 계산에서 제외)
+  const cs = $('#sheet-cover .cover-sentence');
+  const cb = $('#sheet-cover .cover-body');
+  let cz = 140; cs.style.fontSize = cz + 'px';
+  while ((cb.scrollHeight > cb.clientHeight + 1 ||
+          cb.scrollWidth  > cb.clientWidth + 1) && cz > 52) {
+    cz -= 3; cs.style.fontSize = cz + 'px';
+  }
+}
+
+/* ── 미리보기 스케일 ─────────────────────────────────────── */
+function layout() {
+  const sheet = $('.sheet.on');
+  const avail = $('#stage').clientHeight - 80;
+  const k = Math.min(1, avail / sheet.offsetHeight, ($('#stage').clientWidth - 80) / 1080);
+  $('#scaler').style.transform = `scale(${k})`;
+  $('#scaler').style.height = sheet.offsetHeight * k + 'px';
+}
+
+/* ── PNG 저장 ────────────────────────────────────────────── */
+async function shoot(el, name) {
+  await document.fonts.ready;
+  document.body.classList.add('shooting');
+  const prev = $('#scaler').style.transform;
+  $('#scaler').style.transform = 'none';
+  const wasOn = el.classList.contains('on');
+  el.classList.add('on');
+  try {
+    const cv = await html2canvas(el, {
+      backgroundColor: null, scale: 1, logging: false, useCORS: true,
+      width: el.offsetWidth, height: el.offsetHeight,
+      windowWidth: el.offsetWidth, windowHeight: el.offsetHeight
+    });
+    const a = document.createElement('a');
+    a.download = name; a.href = cv.toDataURL('image/png'); a.click();
+  } finally {
+    if (!wasOn) el.classList.remove('on');
+    $('#scaler').style.transform = prev;
+    document.body.classList.remove('shooting');
+  }
+}
+const slug = () => $('[data-bind="day"]').value.replace(/[^\w가-힣]+/g, '-') || 'post';
+
+/* ── 이벤트 ──────────────────────────────────────────────── */
+$$('#editor [data-bind], #theme, #ratio').forEach(el =>
+  el.addEventListener('input', apply));
+
+$$('.tabs button').forEach(b => b.addEventListener('click', () => {
+  tab = b.dataset.tab;
+  $$('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $$('.sheet').forEach(s => s.classList.toggle('on', s.id === 'sheet-' + tab));
+  layout();
+}));
+
+$('#dl').onclick = () => shoot($('.sheet.on'), `${slug()}-${tab}.png`);
+$('#dlAll').onclick = async () => {
+  await shoot($('#sheet-cover'), `${slug()}-1-cover.png`);
+  await new Promise(r => setTimeout(r, 400));
+  await shoot($('#sheet-full'), `${slug()}-2-detail.png`);
+};
+$('#copy').onclick = () => {
+  const o = {}; KEYS.forEach(k => o[k] = $(`[data-bind="${k}"]`).value);
+  navigator.clipboard.writeText(JSON.stringify(o, null, 2));
+  $('#copy').textContent = '복사됨 ✓';
+  setTimeout(() => $('#copy').textContent = '입력값 JSON 복사', 1200);
+};
+window.addEventListener('resize', layout);
+
+/* ── CLI 렌더 모드: ?export=1&sheet=full&data=<base64 json> ── */
+const qs = new URLSearchParams(location.search);
+if (qs.get('export') === '1') {
+  document.body.classList.add('export');
+  let d = {};
+  try { d = JSON.parse(decodeURIComponent(escape(atob(qs.get('data') || '')))); } catch (e) {}
+  KEYS.forEach(k => { if (d[k] != null) $(`[data-bind="${k}"]`).value = d[k]; });
+  if (d.theme) $('#theme').value = d.theme;
+  if (d.ratio) $('#ratio').value = d.ratio;
+  const want = 'sheet-' + (qs.get('sheet') || 'full');
+  $$('.sheet').forEach(el => el.classList.toggle('on', el.id === want));
+  document.fonts.ready.then(() => {
+    KEYS.forEach(k => $$(`[data-v="${k}"]`).forEach(
+      n => n.textContent = $(`[data-bind="${k}"]`).value));
+    $('#sheet-full').dataset.theme = $('#theme').value;
+    $$('.canvas').forEach(c => c.dataset.ratio = $('#ratio').value);
+    fit();
+    document.documentElement.dataset.ready = '1';
+  });
+}
+
+/* ── 복원 후 시작 ────────────────────────────────────────── */
+if (qs.get('export') !== '1') (() => {
+  try {
+    const s = JSON.parse(localStorage.getItem('dailyIG') || '{}');
+    KEYS.forEach(k => { if (s[k] != null) $(`[data-bind="${k}"]`).value = s[k]; });
+    if (s.theme) $('#theme').value = s.theme;
+    if (s.ratio) $('#ratio').value = s.ratio;
+  } catch (e) {}
+  document.fonts.ready.then(apply);
+  apply();
+})();
+</script>
+</body>
+</html>

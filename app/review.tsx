@@ -1,3 +1,4 @@
+import { useReviewExitAd } from '@/ads/useReviewExitAd';
 import { showToast } from '@/ui/Toast';
 import { router, Stack } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -87,6 +88,7 @@ export default function ReviewScreen() {
         : [],
     [currentExpression, currentIndex, learnedExpressions, publishedExpressions]
   );
+  const endReview = useReviewExitAd(reviewExpressions.length > 0);
   const isFinished = reviewExpressions.length > 0 && currentIndex >= reviewExpressions.length;
 
   useEffect(() => {
@@ -130,7 +132,11 @@ export default function ReviewScreen() {
     setSelectedId(null);
     setAnswerResult(null);
     setErrorMessage(null);
-    setCurrentIndex((index) => index + 1);
+    if (currentIndex + 1 === reviewExpressions.length) {
+      endReview(() => setCurrentIndex((index) => index + 1));
+    } else {
+      setCurrentIndex((index) => index + 1);
+    }
   };
 
   if (isLoading) {

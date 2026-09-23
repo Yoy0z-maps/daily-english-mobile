@@ -1,0 +1,32 @@
+[
+  {
+    "sentence": "I'm down for it.",
+    "meaning": "나 그거 할래. / 나도 좋아.",
+    "keyword": "be down for",
+    "keywordMeaning": "~할 의향이 있다, ~에 찬성이다",
+    "example": "\"Pizza tonight?\" \"I'm totally down for it.\"",
+    "exampleMeaning": "\"오늘 저녁 피자 어때?\" \"완전 좋지.\"",
+    "category": "Daily",
+    "level": "B1"
+  },
+  {
+    "sentence": "Let's circle back on this.",
+    "meaning": "이건 나중에 다시 얘기하죠.",
+    "keyword": "circle back",
+    "keywordMeaning": "(논의를) 나중에 다시 다루다",
+    "example": "Let's circle back on the budget after the demo.",
+    "exampleMeaning": "예산 얘기는 데모 끝나고 다시 하죠.",
+    "category": "Business",
+    "level": "B2"
+  },
+  {
+    "sentence": "It's on me.",
+    "meaning": "내가 낼게.",
+    "keyword": "It's on me",
+    "keywordMeaning": "내가 계산할게 (한턱낼게)",
+    "example": "Put your wallet away — it's on me tonight.",
+    "exampleMeaning": "지갑 넣어, 오늘은 내가 살게.",
+    "category": "Daily",
+    "level": "A2"
+  }
+]

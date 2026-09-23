@@ -1,26 +1,31 @@
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
-const useToast = create<{ message: string | null; revision: number }>(() => ({ message: null, revision: 0 }));
-export const showToast = (message: string) => useToast.setState((state) => ({ message, revision: state.revision + 1 }));
+type ToastAction = { label: string; onPress: () => void };
+const useToast = create<{ message: string | null; revision: number; action?: ToastAction }>(() => ({ message: null, revision: 0 }));
+export const showToast = (message: string, action?: ToastAction) => useToast.setState((state) => ({ message, action, revision: state.revision + 1 }));
 
 export function Toast() {
-  const { message, revision } = useToast();
+  const { message, revision, action } = useToast();
   const insets = useSafeAreaInsets();
   useEffect(() => {
     if (!message) return;
-    const timer = setTimeout(() => useToast.setState({ message: null }), 4500);
+    const timer = setTimeout(() => useToast.setState({ message: null }), action ? 12000 : 4500);
     return () => clearTimeout(timer);
-  }, [message, revision]);
+  }, [message, revision, action]);
   if (!message) return null;
   return (
-    <Pressable accessibilityRole="alert" accessibilityLiveRegion="assertive"
-      onPress={() => useToast.setState({ message: null })}
+    <View accessibilityRole="alert" accessibilityLiveRegion="assertive"
       style={[styles.toast, { bottom: insets.bottom + 72 }]}>
       <Text style={styles.text}>{message}</Text>
-    </Pressable>
+      {action ? <Pressable accessibilityRole="button" style={{ padding: 10 }} onPress={() => {
+        if (useToast.getState().revision !== revision || !useToast.getState().message) return;
+        useToast.setState({ message: null, action: undefined });
+        action.onPress();
+      }}><Text style={[styles.text, { fontWeight: '800' }]}>{action.label}</Text></Pressable> : null}
+    </View>
   );
 }
 const styles = StyleSheet.create({

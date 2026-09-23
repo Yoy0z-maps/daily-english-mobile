@@ -92,7 +92,7 @@ module.exports = {
   expo: {
     name: "오늘의 문장",
     slug: "daily-english-sentence",
-    version: "1.0.1",
+    version: "1.0.2",
     orientation: "portrait",
     icon: "./src/assets/icon/icon.png",
     scheme: "dailyenglish",
@@ -106,7 +106,7 @@ module.exports = {
       bundleIdentifier: IOS_BUNDLE_IDENTIFIER,
       appleTeamId: APPLE_TEAM_ID,
       supportsTablet: true,
-      buildNumber: "6",
+      buildNumber: "7",
       entitlements: {
         "com.apple.security.application-groups": [APP_GROUP_IDENTIFIER],
       },
@@ -121,6 +121,8 @@ module.exports = {
       bundler: "metro",
     },
     plugins: [
+      "expo-font",
+      "./plugins/withPodDeploymentTarget",
       "expo-router",
       "expo-notifications",
       "expo-apple-authentication",
@@ -147,6 +149,7 @@ module.exports = {
         {
           ios: {
             extraPods: GOOGLE_SIGN_IN_EXTRA_IOS_PODS,
+            deploymentTarget: "17.0",
           },
           android: {
             extraMavenRepos: [
