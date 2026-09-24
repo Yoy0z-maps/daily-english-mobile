@@ -123,6 +123,7 @@ module.exports = {
     plugins: [
       "expo-font",
       "./plugins/withPodDeploymentTarget",
+      "./plugins/withSceneLifecycle",
       "expo-router",
       "expo-notifications",
       "expo-apple-authentication",
