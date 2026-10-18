@@ -49,7 +49,7 @@ export function ConnectivityGate({ children }: PropsWithChildren) {
             <ActivityIndicator color={colors.primary} size="large" />
             <Text style={[styles.title, { color: colors.text }]}>인터넷 연결 확인 중</Text>
             <Text style={[styles.description, { color: colors.textMuted }]}>
-              안전하게 학습 기록을 불러오고 있어요.
+              학습 문장을 불러올 준비를 하고 있어요.
             </Text>
           </>
         ) : (
@@ -57,8 +57,8 @@ export function ConnectivityGate({ children }: PropsWithChildren) {
             <Text style={styles.icon}>📡</Text>
             <Text style={[styles.title, { color: colors.text }]}>인터넷 연결이 필요해요</Text>
             <Text style={[styles.description, { color: colors.textMuted }]}>
-              학습 기록은 Supabase에 안전하게 저장됩니다. Wi-Fi 또는 모바일 데이터를 연결한 뒤
-              다시 시도해주세요.
+              오늘의 학습 문장을 불러오려면 인터넷 연결이 필요해요. Wi-Fi 또는 모바일 데이터를
+              연결한 뒤 다시 시도해주세요.
             </Text>
             <Pressable
               style={[styles.button, { backgroundColor: colors.primary }]}

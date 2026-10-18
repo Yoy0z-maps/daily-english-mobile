@@ -21,8 +21,12 @@ function RootNavigator() {
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const isDarkMode = useAppStore((state) => state.isDarkMode);
   const isAdminMode = useAppStore((state) => state.isAdminMode);
+  const hasCompletedOnboarding = useAppStore((state) => state.hasCompletedOnboarding);
+  // 로그인하지 않아도 온보딩만 마치면 기기 저장 모드로 학습할 수 있다.
   const canEnterHome =
-    isAuthReady && hasHydrated && (session !== null || isAdminMode);
+    isAuthReady &&
+    hasHydrated &&
+    (session !== null || isAdminMode || hasCompletedOnboarding);
   const canEnterOnboarding = isAuthReady && hasHydrated && !canEnterHome;
 
   return (
@@ -61,6 +65,10 @@ function RootNavigator() {
               headerBackButtonDisplayMode: "minimal",
               presentation: "card",
             }}
+          />
+          <Stack.Screen
+            name="login"
+            options={{ title: "로그인 · 회원가입", presentation: "modal" }}
           />
           <Stack.Screen
             name="wrong-note"

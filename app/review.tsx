@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { useContent } from '@/content/ContentProvider';
+import { loadLocalReviewQueue, recordLocalReviewAnswer } from '@/learning/localLearning';
 import { buildReviewOptions } from '@/learning/reviewPolicy';
 import { useAppStore } from '@/store/useAppStore';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
@@ -22,7 +23,7 @@ export default function ReviewScreen() {
   const colors = useThemeColors();
   const styles = createStyles(colors);
   const { expressions: publishedExpressions } = useContent();
-  const { syncNow } = useLearningSync();
+  const { isGuest, syncNow } = useLearningSync();
   const completedExpressionIds = useAppStore((state) => state.completedExpressionIds);
   const [queue, setQueue] = useState<ReviewQueueItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,8 +38,13 @@ export default function ReviewScreen() {
 
   useEffect(() => {
     let isActive = true;
+    const queueRequest = isGuest
+      ? Promise.resolve().then(() =>
+          loadLocalReviewQueue(publishedExpressions.map((expression) => expression.id))
+        )
+      : loadReviewQueue();
 
-    void loadReviewQueue()
+    void queueRequest
       .then((items) => {
         if (isActive) {
           setQueue(items);
@@ -61,6 +67,7 @@ export default function ReviewScreen() {
     return () => {
       isActive = false;
     };
+    // 복습 문제는 화면에 들어올 때 한 번만 뽑는다.
   }, []);
 
   const learnedExpressions = useMemo(
@@ -94,13 +101,13 @@ export default function ReviewScreen() {
   useEffect(() => {
     let active = true;
     preparedIdsRef.current = new Map();
-    if (currentExpression) {
+    if (currentExpression && !isGuest) {
       void prepareReviewAnswerIds([currentExpression.id, ...options.map((option) => option.id)])
         .then((ids) => { if (active) preparedIdsRef.current = ids; })
         .catch(() => { /* Submission falls back to resolving missing IDs. */ });
     }
     return () => { active = false; };
-  }, [currentExpression, options]);
+  }, [currentExpression, isGuest, options]);
 
   const handleSelect = async (id: number) => {
     if (selectedId !== null || !currentExpression || submittingRef.current) return;
@@ -112,7 +119,9 @@ export default function ReviewScreen() {
     if (isCorrect) setScore((value) => value + 1);
 
     try {
-      const result = await submitReviewAnswer(currentExpression.id, id, isCorrect, preparedIdsRef.current);
+      const result = isGuest
+        ? recordLocalReviewAnswer(currentExpression.id, isCorrect)
+        : await submitReviewAnswer(currentExpression.id, id, isCorrect, preparedIdsRef.current);
       setAnswerResult(result);
       // Refresh the dashboard without delaying feedback or the next question.
       void syncNow();

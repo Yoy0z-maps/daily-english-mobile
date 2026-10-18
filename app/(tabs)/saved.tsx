@@ -7,6 +7,7 @@ import { Alert, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, Te
 import { useAuth } from '@/auth/AuthProvider';
 import { ExpressionCard } from '@/components/ExpressionCard';
 import { useContent } from '@/content/ContentProvider';
+import { createLocalCategory, setLocalCategoryMembership } from '@/learning/localLearning';
 import {
   DEFAULT_SAVED_CATEGORY_ID,
   defaultSavedCategory,
@@ -59,7 +60,18 @@ export default function SavedScreen() {
     [publishedExpressions, savedExpressionIds]
   );
   const handleCreateCategory = async () => {
-    if (!session || isMutating) {
+    if (isMutating) {
+      return;
+    }
+
+    if (!session) {
+      try {
+        setSelectedCategoryId(createLocalCategory(newCategoryName));
+        setNewCategoryName('');
+        setIsCreateModalVisible(false);
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : '카테고리를 만들지 못했습니다. 다시 시도해주세요.');
+      }
       return;
     }
 
@@ -84,7 +96,12 @@ export default function SavedScreen() {
   };
 
   const handleRemoveExpression = async (expressionId: number) => {
-    if (!session || isMutating) {
+    if (isMutating) {
+      return;
+    }
+
+    if (!session) {
+      setLocalCategoryMembership(expressionId, selectedCategoryId, false);
       return;
     }
 

@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
+import { createLocalCategory, setLocalCategoryMembership } from '@/learning/localLearning';
 import {
   DEFAULT_SAVED_CATEGORY_ID,
   defaultSavedCategory,
@@ -52,7 +53,13 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
   const refresh = () => { void syncNow().catch((error) => console.warn('저장 후 동기화에 실패했습니다.', error)); };
 
   const handleCategoryPress = async (categoryId: string, shouldSave = !savedCategoryIds.includes(categoryId), revision = useAppStore.getState().sessionRevision) => {
-    if (!session || savingRef.current || useAppStore.getState().sessionRevision !== revision) return;
+    if (savingRef.current || useAppStore.getState().sessionRevision !== revision) return;
+    if (!session) {
+      setLocalCategoryMembership(expressionId, categoryId, shouldSave);
+      onClose();
+      showToast(shouldSave ? '카테고리에 저장했어요.' : '카테고리에서 저장을 해제했어요.');
+      return;
+    }
     savingRef.current = true;
     setIsSaving(true);
     const finishMutation = beginLearningMutation();
@@ -84,8 +91,15 @@ export const SaveToCategoryModal = ({ visible, expressionId, onClose }: SaveToCa
   };
 
   const handleCreateAndSave = async (name = newCategoryName, revision = useAppStore.getState().sessionRevision) => {
-    if (!session || savingRef.current || useAppStore.getState().sessionRevision !== revision) return;
+    if (savingRef.current || useAppStore.getState().sessionRevision !== revision) return;
     if (!name.trim()) { showToast('카테고리 이름을 입력해주세요.'); return; }
+    if (!session) {
+      createLocalCategory(name, expressionId);
+      setNewCategoryName('');
+      onClose();
+      showToast('카테고리에 저장했어요.');
+      return;
+    }
     savingRef.current = true;
     setIsSaving(true);
     try {

@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import { type PropsWithChildren, useEffect, useRef } from 'react';
+import { type PropsWithChildren, useEffect } from 'react';
 import { Alert, AppState } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
@@ -15,8 +15,6 @@ export function StudyReminderProvider({ children }: PropsWithChildren) {
   const enabled = useAppStore((state) => state.notificationsEnabled);
   const history = useAppStore((state) => state.completedHistory);
   const lastCompletedDate = useAppStore((state) => state.lastCompletedDate);
-  const activeUser = useRef(session?.user.id);
-  activeUser.current = session?.user.id;
 
   useEffect(() => {
     if (!supportsStudyReminders) return;
@@ -24,7 +22,7 @@ export function StudyReminderProvider({ children }: PropsWithChildren) {
       handleNotification: async (notification) => {
         const state = useAppStore.getState();
         const isReminder = notification.request.content.data?.kind === 'study-reminder';
-        const show = !isReminder || Boolean(activeUser.current && state.notificationsEnabled &&
+        const show = !isReminder || Boolean(state.notificationsEnabled &&
           state.lastCompletedDate !== getLocalDateKey() &&
           !state.completedHistory.some((entry) => entry.completedDate === getLocalDateKey()));
         return { shouldShowBanner: show, shouldShowList: show, shouldPlaySound: show, shouldSetBadge: false };
@@ -41,7 +39,7 @@ export function StudyReminderProvider({ children }: PropsWithChildren) {
       void syncStudyReminders(() => {
         const state = useAppStore.getState();
         return {
-          enabled: Boolean(activeUser.current) && state.notificationsEnabled,
+          enabled: state.notificationsEnabled,
           completedDates: [...state.completedHistory.map((entry) => entry.completedDate),
             ...(state.lastCompletedDate ? [state.lastCompletedDate] : [])]
         };
@@ -60,7 +58,7 @@ export function StudyReminderProvider({ children }: PropsWithChildren) {
   }, [isReady, hasHydrated, session?.user.id, enabled, history, lastCompletedDate, lastSyncedAt]);
 
   useEffect(() => {
-    if (!supportsStudyReminders || !isReady || !hasHydrated || !session) return;
+    if (!supportsStudyReminders || !isReady || !hasHydrated) return;
     const openReminder = (response: Notifications.NotificationResponse) => {
       if (response.notification.request.content.data?.kind !== 'study-reminder') return;
       router.push('/(tabs)/home');

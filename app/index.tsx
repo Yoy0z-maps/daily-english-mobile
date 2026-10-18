@@ -10,6 +10,7 @@ export default function IndexScreen() {
   const { isReady: isAuthReady, session } = useAuth();
   const hasHydrated = useAppStore((state) => state.hasHydrated);
   const isAdminMode = useAppStore((state) => state.isAdminMode);
+  const hasCompletedOnboarding = useAppStore((state) => state.hasCompletedOnboarding);
 
   if (!hasHydrated || !isAuthReady) {
     return (
@@ -19,7 +20,7 @@ export default function IndexScreen() {
     );
   }
 
-  const canEnterHome = session !== null || isAdminMode;
+  const canEnterHome = session !== null || isAdminMode || hasCompletedOnboarding;
 
   return <Redirect href={canEnterHome ? '/home' : '/onboarding'} />;
 }

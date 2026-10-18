@@ -22,16 +22,28 @@ export type SavedCategory = {
   createdAt: string;
 };
 
+// 서버 wrong_notes 테이블과 같은 규칙(2회 연속 정답 시 마스터)을 기기 안에서 재현하기 위한 기록.
+export type LocalWrongNote = {
+  wrongCount: number;
+  correctStreak: number;
+  status: 'active' | 'mastered';
+  lastWrongAt: string;
+  nextReviewAt: string | null;
+};
+
 type AppState = LearningStateSnapshot & {
   hasCompletedOnboarding: boolean;
   isDarkMode: boolean;
   notificationsEnabled: boolean;
   isAdminMode: boolean;
+  // 학습 데이터의 주인. null이면 로그인 없이 기기에만 저장되는 게스트 데이터다.
+  learningOwnerId: string | null;
+  localWrongNotes: Record<string, LocalWrongNote>;
 };
 
 type AppActions = {
   completeOnboarding: () => void;
-  applyCloudLearningState: (snapshot: LearningStateSnapshot) => void;
+  applyCloudLearningState: (snapshot: LearningStateSnapshot, ownerId: string) => void;
   clearUserSession: () => void;
   toggleDarkMode: () => void;
   setNotificationsEnabled: (enabled: boolean) => void;
@@ -81,6 +93,11 @@ export const getLocalDateKey = (date = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
+const learningStateKeys = Object.keys(emptyLearningState) as (keyof LearningStateSnapshot)[];
+
+export const pickLearningState = (state: LearningStateSnapshot): LearningStateSnapshot =>
+  Object.fromEntries(learningStateKeys.map((key) => [key, state[key]])) as LearningStateSnapshot;
+
 const ensureDefaultCategory = (categories: SavedCategory[] = []) => {
   const withoutDuplicateDefault = categories.filter(
     (category) => category.id !== DEFAULT_SAVED_CATEGORY_ID
@@ -96,16 +113,26 @@ export const useAppStore = create<AppStore>()(
       isDarkMode: false,
       notificationsEnabled: true,
       isAdminMode: false,
+      learningOwnerId: null,
+      localWrongNotes: {},
       hasHydrated: false,
       sessionRevision: 0,
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
-      applyCloudLearningState: (snapshot) =>
-        set({ ...snapshot, savedCategories: ensureDefaultCategory(snapshot.savedCategories) }),
+      applyCloudLearningState: (snapshot, ownerId) =>
+        set({
+          ...snapshot,
+          savedCategories: ensureDefaultCategory(snapshot.savedCategories),
+          learningOwnerId: ownerId,
+          // 로그인 상태의 오답 기록은 서버가 관리하므로 기기 사본은 비운다.
+          localWrongNotes: {}
+        }),
+      // 로그아웃·계정 전환 시 이전 사용자의 학습 기록을 비우고 빈 게스트 상태로 돌아간다.
       clearUserSession: () =>
         set({
           ...emptyLearningState,
+          learningOwnerId: null,
+          localWrongNotes: {},
           sessionRevision: get().sessionRevision + 1,
-          hasCompletedOnboarding: false,
           isAdminMode: false
         }),
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
@@ -184,26 +211,38 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'daily-english-device-settings-v1',
-      version: 1,
+      version: 2,
       // Preserve an explicit opt-out; new installations default to enabled.
       migrate: (persisted) => ({
         ...(persisted as Partial<AppState>),
         notificationsEnabled: (persisted as Partial<AppState>)?.notificationsEnabled ?? true
       }),
       storage: createJSONStorage(() => AsyncStorage),
+      // 로그인 없이도 학습을 이어갈 수 있도록 학습 기록 전체를 기기에 저장한다.
       partialize: (state) => ({
         isDarkMode: state.isDarkMode,
-        notificationsEnabled: state.notificationsEnabled
+        notificationsEnabled: state.notificationsEnabled,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
+        learningOwnerId: state.learningOwnerId,
+        localWrongNotes: state.localWrongNotes,
+        ...pickLearningState(state)
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState && typeof persistedState === 'object'
           ? persistedState as Partial<AppState>
           : {};
+        const learning = pickLearningState({ ...emptyLearningState, ...persisted });
         return {
           ...currentState,
+          ...learning,
+          savedCategories: ensureDefaultCategory(learning.savedCategories),
           isDarkMode: persisted.isDarkMode ?? currentState.isDarkMode,
           notificationsEnabled:
-            persisted.notificationsEnabled ?? currentState.notificationsEnabled
+            persisted.notificationsEnabled ?? currentState.notificationsEnabled,
+          hasCompletedOnboarding:
+            persisted.hasCompletedOnboarding ?? currentState.hasCompletedOnboarding,
+          learningOwnerId: persisted.learningOwnerId ?? null,
+          localWrongNotes: persisted.localWrongNotes ?? {}
         };
       },
       onRehydrateStorage: (initialState) => (state, error) => {
