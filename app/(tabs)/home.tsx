@@ -10,6 +10,7 @@ import { ExpressionCard } from '@/components/ExpressionCard';
 import { SaveToCategoryModal } from '@/components/SaveToCategoryModal';
 import { StreakCard } from '@/components/StreakCard';
 import { useContent } from '@/content/ContentProvider';
+import { completeLocalContent } from '@/learning/localLearning';
 import {
   getLocalDateKey,
   selectEffectiveIsPremium,
@@ -61,7 +62,7 @@ export default function HomeScreen() {
     refresh,
     getExpressionById
   } = useContent();
-  const { isInitialSyncing, syncNow } = useLearningSync();
+  const { isGuest, isInitialSyncing, syncNow } = useLearningSync();
   const [categoryModalExpressionId, setCategoryModalExpressionId] = useState<number | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const storedCurrentExpressionId = useAppStore((state) => state.currentExpressionId);
@@ -147,6 +148,15 @@ export default function HomeScreen() {
 
   const handleCompleteToday = async () => {
     if (!expression || isCompletedToday || isCompleting) {
+      return;
+    }
+
+    if (isGuest) {
+      // 로그인하지 않은 사용자는 기기에만 완료 기록을 남긴다.
+      if (!completeLocalContent(expression.id)) {
+        showToast('오늘의 문장이 바뀌었어요. 새 문장을 확인해주세요.');
+      }
+      void syncWidgetFromStore().catch((error) => console.warn('위젯 갱신에 실패했습니다.', error));
       return;
     }
 

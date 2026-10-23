@@ -11,14 +11,21 @@ import {
 import { AppState, Platform } from 'react-native';
 
 import { useAuth } from '@/auth/AuthProvider';
+import {
+  buildGuestImportPayload,
+  hasLocalLearningData,
+  normalizeLocalLearningState
+} from '@/learning/localLearning';
 import { useAppStore } from '@/store/useAppStore';
-import { loadCloudLearningState } from '@/sync/learningSync';
+import { importGuestLearningState, loadCloudLearningState } from '@/sync/learningSync';
 
 import { mutationRevision, waitForLearningMutations } from '@/sync/pendingMutations';
 
 type LearningSyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
 type LearningSyncContextValue = {
+  // 로그인 없이 기기에만 학습 기록을 저장하는 상태
+  isGuest: boolean;
   status: LearningSyncStatus;
   isInitialSyncing: boolean;
   errorMessage: string | null;
@@ -40,17 +47,34 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
   const userId = session?.user.id ?? null;
 
   useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
     activeUserIdRef.current = userId;
     activeSyncRef.current = null;
-    useAppStore.getState().clearUserSession();
+    const { learningOwnerId, clearUserSession } = useAppStore.getState();
+
+    // 게스트 기록(owner null)은 로그인 후 계정으로 옮기기 위해 남겨두고,
+    // 다른 계정의 기록만 비운다.
+    if (learningOwnerId !== null && learningOwnerId !== userId) {
+      clearUserSession();
+    }
+
     setStatus(userId ? 'syncing' : 'idle');
-    setIsInitialSyncing(Boolean(userId));
+    // 이 계정의 기록이 이미 기기에 있으면 그대로 보여주고 백그라운드에서 동기화한다.
+    setIsInitialSyncing(Boolean(userId) && useAppStore.getState().learningOwnerId !== userId);
     setErrorMessage(null);
     setLastSyncedAt(null);
-  }, [userId]);
+  }, [hasHydrated, userId]);
 
   const syncNow = useCallback(async () => {
-    if (!userId || !hasHydrated) {
+    if (!hasHydrated) {
+      return;
+    }
+
+    if (!userId) {
+      normalizeLocalLearningState();
       setStatus('idle');
       return;
     }
@@ -67,6 +91,13 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
       try {
         await waitForLearningMutations();
         if (activeUserIdRef.current !== syncingUserId) return;
+
+        const localState = useAppStore.getState();
+        if (localState.learningOwnerId === null && hasLocalLearningData(localState)) {
+          await importGuestLearningState(buildGuestImportPayload(localState));
+          if (activeUserIdRef.current !== syncingUserId) return;
+        }
+
         let revision = mutationRevision();
         let cloudState = await loadCloudLearningState(syncingUserId);
         while (revision !== mutationRevision()) {
@@ -80,7 +111,7 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
           return;
         }
 
-        useAppStore.getState().applyCloudLearningState(cloudState);
+        useAppStore.getState().applyCloudLearningState(cloudState, syncingUserId);
         setStatus('synced');
         setLastSyncedAt(new Date().toISOString());
       } catch (error) {
@@ -105,7 +136,7 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
   }, [hasHydrated, userId]);
 
   useEffect(() => {
-    if (!userId || !hasHydrated) {
+    if (!hasHydrated) {
       return;
     }
 
@@ -121,11 +152,11 @@ export function LearningSyncProvider({ children }: PropsWithChildren) {
           });
 
     return () => appStateSubscription?.remove();
-  }, [hasHydrated, syncNow, userId]);
+  }, [hasHydrated, syncNow]);
 
   const value = useMemo<LearningSyncContextValue>(
-    () => ({ status, isInitialSyncing, errorMessage, lastSyncedAt, syncNow }),
-    [errorMessage, isInitialSyncing, lastSyncedAt, status, syncNow]
+    () => ({ isGuest: !userId, status, isInitialSyncing, errorMessage, lastSyncedAt, syncNow }),
+    [errorMessage, isInitialSyncing, lastSyncedAt, status, syncNow, userId]
   );
 
   return <LearningSyncContext.Provider value={value}>{children}</LearningSyncContext.Provider>;

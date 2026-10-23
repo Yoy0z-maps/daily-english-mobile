@@ -21,7 +21,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 const getProviderSummary = (session: ReturnType<typeof useAuth>['session']) => {
   if (!session) {
-    return '로그아웃 상태';
+    return '로그인하지 않음';
   }
 
   const metadataProviders = session.user.app_metadata.providers;
@@ -53,8 +53,9 @@ export default function SettingsScreen() {
   const clearUserSession = useAppStore((state) => state.clearUserSession);
   const isAdminMode = useAppStore((state) => state.isAdminMode);
   const providerSummary = getProviderSummary(session);
-  const syncStatusLabel =
-    syncStatus === 'syncing'
+  const syncStatusLabel = !session
+    ? '이 기기에만 저장 중'
+    : syncStatus === 'syncing'
       ? '동기화 중…'
       : syncStatus === 'synced'
         ? '동기화됨'
@@ -82,8 +83,18 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleSyncPress = () => {
+    // 로그인하지 않은 사용자는 로그인/회원가입 후 기기 기록을 계정으로 옮겨 동기화한다.
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+
+    void syncNow();
+  };
+
   const handleSignOut = () => {
-    Alert.alert('로그아웃', '이 기기에 남은 사용자 학습 캐시도 함께 비울까요?', [
+    Alert.alert('로그아웃', '로그아웃하면 이 기기에 남은 계정의 학습 기록이 지워져요. 기록은 계정에 안전하게 보관됩니다.', [
       { text: '취소', style: 'cancel' },
       {
         text: '로그아웃',
@@ -194,7 +205,7 @@ export default function SettingsScreen() {
             <Switch
               value={notificationsEnabled}
               onValueChange={(value) => { void handleNotificationsChange(value); }}
-              disabled={!supportsStudyReminders || !session || isRequestingNotifications}
+              disabled={!supportsStudyReminders || isRequestingNotifications}
               trackColor={{ false: colors.border, true: colors.primarySoft }}
               thumbColor={notificationsEnabled ? colors.primary : '#FFFFFF'}
             />
@@ -204,47 +215,61 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.accountSummary}>
-            <Text style={styles.accountLabel}>Supabase 세션</Text>
+            <Text style={styles.accountLabel}>계정</Text>
             <Text style={styles.accountValue}>
-              {session ? `${providerSummary} · ${session.user.email ?? '이메일 미제공'}` : '로그아웃 상태'}
+              {session ? `${providerSummary} · ${session.user.email ?? '이메일 미제공'}` : '로그인 없이 사용 중'}
             </Text>
-            {session ? <Text style={styles.accountId}>UID {session.user.id}</Text> : null}
+            {session ? (
+              <Text style={styles.accountId}>UID {session.user.id}</Text>
+            ) : (
+              <Text style={styles.accountId}>
+                학습 기록이 이 기기에만 저장돼요. 앱을 삭제하거나 기기를 바꾸면 기록이 사라질 수 있어요.
+              </Text>
+            )}
           </View>
           <View style={styles.syncSummary}>
             <View style={styles.syncTextGroup}>
               <Text style={styles.accountLabel}>학습 데이터</Text>
               <Text style={styles.accountValue}>{syncStatusLabel}</Text>
-              {lastSyncedAt ? (
+              {session && lastSyncedAt ? (
                 <Text style={styles.accountId}>
                   마지막 동기화 {new Date(lastSyncedAt).toLocaleString('ko-KR')}
                 </Text>
               ) : null}
-              {syncErrorMessage ? <Text style={styles.syncError}>{syncErrorMessage}</Text> : null}
+              {session && syncErrorMessage ? <Text style={styles.syncError}>{syncErrorMessage}</Text> : null}
             </View>
             <Pressable
               style={styles.syncButton}
-              disabled={syncStatus === 'syncing'}
-              onPress={() => {
-                void syncNow();
-              }}
+              disabled={Boolean(session) && syncStatus === 'syncing'}
+              accessibilityRole="button"
+              onPress={handleSyncPress}
             >
-              <Text style={styles.syncButtonText}>지금 동기화</Text>
+              <Text style={styles.syncButtonText}>{session ? '지금 동기화' : '동기화 진행하기'}</Text>
             </Pressable>
           </View>
-          <Pressable style={styles.menuRow} disabled={isSigningOut} onPress={handleSignOut}>
-            <Text style={styles.menuText}>{isSigningOut ? '로그아웃 중…' : '로그아웃'}</Text>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
-          <Pressable
-            style={styles.menuRow}
-            disabled={isDeletingAccount}
-            onPress={handleDeleteAccount}
-          >
-            <Text style={[styles.menuText, styles.dangerText]}>
-              {isDeletingAccount ? '회원탈퇴 처리 중…' : '회원탈퇴하기'}
-            </Text>
-            <Text style={[styles.chevron, styles.dangerText]}>›</Text>
-          </Pressable>
+          {session ? (
+            <>
+              <Pressable style={styles.menuRow} disabled={isSigningOut} onPress={handleSignOut}>
+                <Text style={styles.menuText}>{isSigningOut ? '로그아웃 중…' : '로그아웃'}</Text>
+                <Text style={styles.chevron}>›</Text>
+              </Pressable>
+              <Pressable
+                style={styles.menuRow}
+                disabled={isDeletingAccount}
+                onPress={handleDeleteAccount}
+              >
+                <Text style={[styles.menuText, styles.dangerText]}>
+                  {isDeletingAccount ? '회원탈퇴 처리 중…' : '회원탈퇴하기'}
+                </Text>
+                <Text style={[styles.chevron, styles.dangerText]}>›</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Pressable style={styles.menuRow} onPress={() => router.push('/login')}>
+              <Text style={styles.menuText}>로그인 · 회원가입</Text>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.section}>

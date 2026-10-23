@@ -10,6 +10,7 @@ jest.mock('@/auth/AuthProvider', () => ({
 jest.mock('@/store/useAppStore', () => {
   const storeState = {
     hasHydrated: true,
+    learningOwnerId: 'user-1' as string | null,
     applyCloudLearningState: jest.fn(),
     clearUserSession: jest.fn()
   };
@@ -22,7 +23,14 @@ jest.mock('@/store/useAppStore', () => {
 });
 
 jest.mock('@/sync/learningSync', () => ({
+  importGuestLearningState: jest.fn().mockResolvedValue(undefined),
   loadCloudLearningState: jest.fn()
+}));
+
+jest.mock('@/learning/localLearning', () => ({
+  buildGuestImportPayload: jest.fn(() => ({ completions: [], categories: [], saved: [], wrong_notes: [] })),
+  hasLocalLearningData: jest.fn(() => true),
+  normalizeLocalLearningState: jest.fn()
 }));
 
 import {
@@ -30,6 +38,7 @@ import {
   useLearningSync
 } from '@/sync/LearningSyncProvider';
 import {
+  importGuestLearningState,
   loadCloudLearningState,
   type LearningStateSnapshot
 } from '@/sync/learningSync';
@@ -67,6 +76,9 @@ const SyncProbe = () => {
 
 describe('LearningSyncProvider', () => {
   it('최초 동기화만 초기 로딩으로 표시하고 이후 동기화는 백그라운드로 처리한다', async () => {
+    // 다른 계정의 기록만 기기에 있으면 이 계정의 기록을 불러올 때까지 로딩을 보여준다.
+    const state = useAppStore.getState() as unknown as { learningOwnerId: string | null };
+    state.learningOwnerId = 'previous-user';
     let resolveInitialSync!: (value: LearningStateSnapshot) => void;
     mockLoadCloudLearningState.mockImplementationOnce(
       () =>
@@ -113,6 +125,15 @@ describe('LearningSyncProvider', () => {
     await act(async () => {
       resolveBackgroundSync(snapshot);
     });
+    state.learningOwnerId = 'user-1';
+  });
+
+  it('이 계정의 기록이 기기에 있으면 로딩 없이 보여주고 백그라운드에서 동기화한다', async () => {
+    mockLoadCloudLearningState.mockResolvedValueOnce(snapshot);
+    const screen = render(<LearningSyncProvider><SyncProbe /></LearningSyncProvider>);
+
+    expect(screen.getByTestId('initial-syncing').props.children).toBe('false');
+    await waitFor(() => expect(screen.getByTestId('status').props.children).toBe('synced'));
   });
 });
 
@@ -128,6 +149,21 @@ it('discards a stale sync response and refetches after an optimistic write settl
   await act(async () => { resolveStale(snapshot); });
   expect(useAppStore.getState().applyCloudLearningState).not.toHaveBeenCalled();
   await act(async () => { finish(); });
-  await waitFor(() => expect(useAppStore.getState().applyCloudLearningState).toHaveBeenCalledWith(updated));
+  await waitFor(() => expect(useAppStore.getState().applyCloudLearningState).toHaveBeenCalledWith(updated, 'user-1'));
   expect(mockLoadCloudLearningState).toHaveBeenCalledTimes(2);
+});
+
+it('로그인 직후 기기에 저장된 게스트 기록을 계정으로 옮긴 뒤 불러온다', async () => {
+  const state = useAppStore.getState() as unknown as { learningOwnerId: string | null };
+  state.learningOwnerId = null;
+  const order: string[] = [];
+  jest.mocked(importGuestLearningState).mockImplementationOnce(async () => { order.push('import'); });
+  mockLoadCloudLearningState.mockImplementationOnce(async () => { order.push('load'); return snapshot; });
+
+  render(<LearningSyncProvider><SyncProbe /></LearningSyncProvider>);
+
+  await waitFor(() => expect(useAppStore.getState().applyCloudLearningState).toHaveBeenCalledWith(snapshot, 'user-1'));
+  expect(order).toEqual(['import', 'load']);
+  expect(useAppStore.getState().clearUserSession).not.toHaveBeenCalled();
+  state.learningOwnerId = 'user-1';
 });

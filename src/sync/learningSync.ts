@@ -1,3 +1,4 @@
+import type { GuestLearningImport } from '@/learning/localLearning';
 import { supabase } from '@/lib/supabase';
 
 const DEFAULT_CATEGORY_ID = 'default';
@@ -290,6 +291,12 @@ export const loadCloudLearningState = async (userId: string): Promise<LearningSt
     lastCompletedDate: dashboard?.last_completed_date ?? null,
     isPremium: profileResult.data?.is_premium ?? false
   };
+};
+
+// 로그인 전에 기기에 쌓은 학습 기록을 계정으로 옮긴다. 서버에서 중복을 무시하므로 다시 호출해도 안전하다.
+export const importGuestLearningState = async (payload: GuestLearningImport) => {
+  const { error } = await supabase.rpc('import_guest_learning_state', { p_state: payload });
+  throwIfError(error);
 };
 
 export const completeCurrentContent = async (expressionId: number) => {
