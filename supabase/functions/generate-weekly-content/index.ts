@@ -298,6 +298,12 @@ Requirements:
 - Use CEFR A2, B1, B2, or C1 only.
 - Every keyword/core expression must be unique within this response.
 - The example must demonstrate the keyword naturally and must not be a trivial rewrite of another item.
+- extra_examples must contain exactly two new, standalone sentences using the keyword naturally (grammatical inflections are allowed). Give each a matching Korean translation.
+- Both extra_examples must differ from sentence, example, and each other in situation and sentence structure. Never copy a base sentence and append a stock phrase such as "I'll keep you posted."
+- Preserve the taught meaning of the keyword in every extra example. Use the expression itself, allowing tense, pronoun changes, and separable phrasal verbs; do not substitute a synonym or a different idiom.
+- Make each extra example useful on its own with a concrete context. Change the purpose, setting, participants, or grammatical structure meaningfully. Merely adding a time phrase, politeness phrase, or follow-up sentence is insufficient.
+- Do not force business follow-ups into Daily, Travel, or OPIc examples. Match the learning level and category, and avoid using the same sentence template across items.
+- Before returning an item, compare all four sentences (sentence, example, and the two extra_examples). Rewrite repeats and near-paraphrases, and verify that both translations match their own English sentence.
 - Korean meanings must be concise and idiomatic.
 - Avoid profanity, sexual content, hate, violence, medical/legal/financial advice, and content unsuitable for users aged 14+.
 - Do not use any excluded keyword/core expression listed below.
@@ -401,6 +407,13 @@ const isValidCandidate = (candidate: GeneratedCandidate) =>
   candidate.usage_situations.length === 2 &&
   Array.isArray(candidate.extra_examples) &&
   candidate.extra_examples.length === 2 &&
+  candidate.extra_examples.every((item) =>
+    typeof item?.sentence === 'string' && item.sentence.trim().length >= 3 &&
+    typeof item?.meaning === 'string' && item.meaning.trim().length >= 2 &&
+    normalizeSentence(item.sentence) !== normalizeSentence(`${candidate.sentence} I'll keep you posted.`)
+  ) &&
+  new Set([candidate.sentence, candidate.example, ...candidate.extra_examples.map((item) => item.sentence)]
+    .map(normalizeSentence)).size === 4 &&
   Array.isArray(candidate.quiz?.distractors) &&
   candidate.quiz.distractors.length === 3;
 

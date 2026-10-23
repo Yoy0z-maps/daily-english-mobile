@@ -5,6 +5,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { ExpressionCard } from "@/components/ExpressionCard";
 import { PremiumLockCard } from "@/components/PremiumLockCard";
 import { SaveToCategoryModal } from "@/components/SaveToCategoryModal";
+import { getExtraExamples } from "@/content/extraExamples";
 import { useContent } from "@/content/ContentProvider";
 import { selectIsExpressionSaved, useAppStore } from "@/store/useAppStore";
 import type { AppTheme } from "@/theme/colors";
@@ -30,21 +31,6 @@ const situationByCategory: Record<EnglishExpression["category"], string[]> = {
     "답변을 길게 이어가기 전에 핵심 문장을 던질 때",
   ],
 };
-
-const getExtraExamples = (expression: EnglishExpression) => [
-  {
-    sentence: expression.example,
-    meaning: expression.exampleMeaning,
-  },
-  ...(expression.extraExamples?.length
-    ? expression.extraExamples
-    : [
-        {
-          sentence: `${expression.sentence} I'll keep you posted.`,
-          meaning: `${expression.meaning} 진행 상황도 알려드릴게요.`,
-        },
-      ]),
-];
 
 const getToneTip = (expression: EnglishExpression) => {
   if (expression.toneTip) {
@@ -118,6 +104,9 @@ export default function ExpressionDetailScreen() {
         <View style={styles.detailCard}>
           <Text style={styles.sectionKicker}>Examples</Text>
           <Text style={styles.sectionTitle}>조금 더 말해보기</Text>
+          {extraExamples.length === 0 && (
+            <Text style={styles.bodyText}>이 표현의 추가 예문을 준비하고 있어요.</Text>
+          )}
           {extraExamples.map((item) => (
             <View key={item.sentence} style={styles.exampleRow}>
               <Text style={styles.exampleSentence}>{item.sentence}</Text>

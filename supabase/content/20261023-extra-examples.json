@@ -1,0 +1,1502 @@
+[
+  {
+    "content_index": 0,
+    "keyword": "look into",
+    "sentence": "I'll look into it.",
+    "extra_examples": [
+      {
+        "sentence": "Could you look into other venues for the event?",
+        "meaning": "행사를 열 다른 장소들을 알아봐 주실 수 있나요?"
+      },
+      {
+        "sentence": "We need to look into why the payment failed.",
+        "meaning": "결제가 왜 실패했는지 확인해야 해요."
+      }
+    ]
+  },
+  {
+    "content_index": 1,
+    "keyword": "be down for",
+    "sentence": "I'm down for it.",
+    "extra_examples": [
+      {
+        "sentence": "I'd be down for a hike this weekend.",
+        "meaning": "이번 주말에 등산 가는 거 좋아요."
+      },
+      {
+        "sentence": "Are you down for trying that new restaurant?",
+        "meaning": "새로 생긴 식당에 가볼 생각 있어요?"
+      }
+    ]
+  },
+  {
+    "content_index": 2,
+    "keyword": "get back to",
+    "sentence": "I'll get back to you.",
+    "extra_examples": [
+      {
+        "sentence": "Can you get back to me with a price by Thursday?",
+        "meaning": "목요일까지 가격을 알려주실 수 있나요?"
+      },
+      {
+        "sentence": "Let me ask the team and get back to you tomorrow.",
+        "meaning": "팀에 물어보고 내일 다시 연락드릴게요."
+      }
+    ]
+  },
+  {
+    "content_index": 3,
+    "keyword": "work for",
+    "sentence": "That works for me.",
+    "extra_examples": [
+      {
+        "sentence": "Would an online meeting work for you?",
+        "meaning": "온라인 회의는 괜찮으세요?"
+      },
+      {
+        "sentence": "This study routine works for me because I have busy mornings.",
+        "meaning": "아침에 바쁜 저에게는 이 공부 방식이 잘 맞아요."
+      }
+    ]
+  },
+  {
+    "content_index": 4,
+    "keyword": "walk through",
+    "sentence": "Could you walk me through it?",
+    "extra_examples": [
+      {
+        "sentence": "Let me walk you through the deployment steps.",
+        "meaning": "배포 단계를 차근차근 설명해드릴게요."
+      },
+      {
+        "sentence": "Can someone walk us through the new dashboard?",
+        "meaning": "새 대시보드를 차근차근 설명해주실 분 있나요?"
+      }
+    ]
+  },
+  {
+    "content_index": 5,
+    "keyword": "circle back",
+    "sentence": "Let's circle back later.",
+    "extra_examples": [
+      {
+        "sentence": "We should circle back to the budget at our next meeting.",
+        "meaning": "다음 회의에서 예산을 다시 논의해야겠어요."
+      },
+      {
+        "sentence": "Could we circle back to your suggestion once we have more data?",
+        "meaning": "자료가 더 모이면 제안해주신 내용을 다시 논의할까요?"
+      }
+    ]
+  },
+  {
+    "content_index": 6,
+    "keyword": "run late",
+    "sentence": "I'm running a bit late.",
+    "extra_examples": [
+      {
+        "sentence": "The bus is running late, so I might miss the opening.",
+        "meaning": "버스가 늦어져서 시작 부분을 놓칠 수도 있어요."
+      },
+      {
+        "sentence": "When meetings run late, I usually grab a quick lunch.",
+        "meaning": "회의가 늦게 끝나면 보통 점심을 간단히 먹어요."
+      }
+    ]
+  },
+  {
+    "content_index": 7,
+    "keyword": "to go",
+    "sentence": "Can I get this to go?",
+    "extra_examples": [
+      {
+        "sentence": "I'd like two sandwiches to go, please.",
+        "meaning": "샌드위치 두 개 포장해주세요."
+      },
+      {
+        "sentence": "Do you want to eat here or get it to go?",
+        "meaning": "여기서 먹을래요, 아니면 포장할래요?"
+      }
+    ]
+  },
+  {
+    "content_index": 8,
+    "keyword": "follow",
+    "sentence": "I'm not following.",
+    "extra_examples": [
+      {
+        "sentence": "I can follow the instructions better with a diagram.",
+        "meaning": "그림이 있으면 안내를 더 잘 이해할 수 있어요."
+      },
+      {
+        "sentence": "Did you follow what she said about the schedule?",
+        "meaning": "그분이 일정에 대해 한 말 이해했어요?"
+      }
+    ]
+  },
+  {
+    "content_index": 9,
+    "keyword": "heads-up",
+    "sentence": "Could you give me a quick heads-up?",
+    "extra_examples": [
+      {
+        "sentence": "Thanks for the heads-up about the road closure.",
+        "meaning": "도로 통제 소식을 미리 알려줘서 고마워요."
+      },
+      {
+        "sentence": "Just a heads-up: the office will be closed on Monday.",
+        "meaning": "미리 알려드리자면 월요일에는 사무실이 문을 닫아요."
+      }
+    ]
+  },
+  {
+    "content_index": 10,
+    "keyword": "take care of",
+    "sentence": "I'll take care of it.",
+    "extra_examples": [
+      {
+        "sentence": "Could you take care of the dishes tonight?",
+        "meaning": "오늘 저녁 설거지 좀 해줄 수 있어요?"
+      },
+      {
+        "sentence": "My neighbor will take care of my cat while I'm away.",
+        "meaning": "제가 없는 동안 이웃이 고양이를 돌봐줄 거예요."
+      }
+    ]
+  },
+  {
+    "content_index": 11,
+    "keyword": "workaround",
+    "sentence": "Is there a workaround?",
+    "extra_examples": [
+      {
+        "sentence": "Restarting the browser is a temporary workaround for this bug.",
+        "meaning": "브라우저를 다시 시작하는 게 이 버그의 임시 해결책이에요."
+      },
+      {
+        "sentence": "We found a workaround that lets users sign in with email.",
+        "meaning": "사용자가 이메일로 로그인할 수 있는 우회 방법을 찾았어요."
+      }
+    ]
+  },
+  {
+    "content_index": 12,
+    "keyword": "keep -ing",
+    "sentence": "The app keeps crashing.",
+    "extra_examples": [
+      {
+        "sentence": "The server keeps restarting during the update.",
+        "meaning": "업데이트 중에 서버가 계속 다시 시작돼요."
+      },
+      {
+        "sentence": "I keep forgetting to mute my microphone.",
+        "meaning": "마이크를 끄는 걸 자꾸 잊어버려요."
+      }
+    ]
+  },
+  {
+    "content_index": 13,
+    "keyword": "switch",
+    "sentence": "Could I switch rooms?",
+    "extra_examples": [
+      {
+        "sentence": "Can we switch to a table by the window?",
+        "meaning": "창가 테이블로 옮길 수 있을까요?"
+      },
+      {
+        "sentence": "You need to switch trains at the next station.",
+        "meaning": "다음 역에서 기차를 갈아타야 해요."
+      }
+    ]
+  },
+  {
+    "content_index": 14,
+    "keyword": "pickup",
+    "sentence": "I'm here for pickup.",
+    "extra_examples": [
+      {
+        "sentence": "What time does the pickup counter close?",
+        "meaning": "수령 창구는 몇 시에 닫나요?"
+      },
+      {
+        "sentence": "Your order will be ready for pickup in ten minutes.",
+        "meaning": "주문하신 상품은 10분 뒤에 수령하실 수 있어요."
+      }
+    ]
+  },
+  {
+    "content_index": 15,
+    "keyword": "depend on",
+    "sentence": "It depends on the situation.",
+    "extra_examples": [
+      {
+        "sentence": "Our weekend plans depend on the weather.",
+        "meaning": "주말 계획은 날씨에 달려 있어요."
+      },
+      {
+        "sentence": "How long the trip takes depends on the traffic.",
+        "meaning": "이동 시간은 교통 상황에 따라 달라요."
+      }
+    ]
+  },
+  {
+    "content_index": 16,
+    "keyword": "unwind",
+    "sentence": "I usually unwind by taking a walk.",
+    "extra_examples": [
+      {
+        "sentence": "Listening to jazz helps me unwind before bed.",
+        "meaning": "잠들기 전에 재즈를 들으면 긴장이 풀려요."
+      },
+      {
+        "sentence": "How do you unwind after a stressful day?",
+        "meaning": "스트레스가 많은 하루를 보낸 뒤 어떻게 긴장을 푸세요?"
+      }
+    ]
+  },
+  {
+    "content_index": 17,
+    "keyword": "push back",
+    "sentence": "Can we push the deadline back?",
+    "extra_examples": [
+      {
+        "sentence": "We may need to push back the product launch.",
+        "meaning": "제품 출시를 미뤄야 할 수도 있어요."
+      },
+      {
+        "sentence": "Could we push our call back to three?",
+        "meaning": "통화 시간을 3시로 미룰 수 있을까요?"
+      }
+    ]
+  },
+  {
+    "content_index": 18,
+    "keyword": "ready for review",
+    "sentence": "The fix is ready for review.",
+    "extra_examples": [
+      {
+        "sentence": "The updated API documentation is ready for review.",
+        "meaning": "수정한 API 문서를 검토하실 수 있어요."
+      },
+      {
+        "sentence": "Please let me know when your pull request is ready for review.",
+        "meaning": "풀 리퀘스트를 검토할 준비가 되면 알려주세요."
+      }
+    ]
+  },
+  {
+    "content_index": 19,
+    "keyword": "make a reservation",
+    "sentence": "I'd like to make a reservation.",
+    "extra_examples": [
+      {
+        "sentence": "Do we need to make a reservation for the museum tour?",
+        "meaning": "박물관 투어를 예약해야 하나요?"
+      },
+      {
+        "sentence": "You can make a reservation online up to a month in advance.",
+        "meaning": "최대 한 달 전부터 온라인으로 예약할 수 있어요."
+      }
+    ]
+  },
+  {
+    "content_index": 20,
+    "keyword": "give me a hand",
+    "sentence": "Could you give me a hand with this box?",
+    "extra_examples": [
+      {
+        "sentence": "Could you give me a hand carrying these chairs upstairs?",
+        "meaning": "이 의자들을 위층으로 옮기는 것 좀 도와줄래요?"
+      },
+      {
+        "sentence": "My brother gave me a hand fixing the fence last weekend.",
+        "meaning": "지난 주말에 남동생이 울타리 고치는 걸 도와줬어요."
+      }
+    ]
+  },
+  {
+    "content_index": 21,
+    "keyword": "be in the mood to",
+    "sentence": "I'm not really in the mood to go out tonight.",
+    "extra_examples": [
+      {
+        "sentence": "After that long flight, I'm only in the mood to take a shower.",
+        "meaning": "긴 비행을 마치니 샤워만 하고 싶어요."
+      },
+      {
+        "sentence": "Would you be in the mood to explore the market after lunch?",
+        "meaning": "점심 먹고 시장을 둘러보고 싶으세요?"
+      }
+    ]
+  },
+  {
+    "content_index": 22,
+    "keyword": "ring a bell",
+    "sentence": "That name rings a bell, but I can't remember where we met.",
+    "extra_examples": [
+      {
+        "sentence": "Does the address on this envelope ring a bell?",
+        "meaning": "이 봉투에 적힌 주소가 낯익나요?"
+      },
+      {
+        "sentence": "The title rang a bell when I saw it on the library shelf.",
+        "meaning": "도서관 책장에서 제목을 보니 어디서 들어본 것 같았어요."
+      }
+    ]
+  },
+  {
+    "content_index": 23,
+    "keyword": "call it a day",
+    "sentence": "Let's call it a day and finish the rest tomorrow.",
+    "extra_examples": [
+      {
+        "sentence": "Once we paint this wall, we can call it a day.",
+        "meaning": "이 벽만 칠하면 오늘은 마무리해도 돼요."
+      },
+      {
+        "sentence": "The photographer called it a day when the light started to fade.",
+        "meaning": "빛이 약해지기 시작하자 사진사는 그날 촬영을 마쳤어요."
+      }
+    ]
+  },
+  {
+    "content_index": 24,
+    "keyword": "be on the same page",
+    "sentence": "Let's make sure we're on the same page before the meeting.",
+    "extra_examples": [
+      {
+        "sentence": "Are the kitchen staff and the servers on the same page about tonight's menu?",
+        "meaning": "주방 직원과 홀 직원 모두 오늘 저녁 메뉴를 똑같이 이해하고 있나요?"
+      },
+      {
+        "sentence": "A shared checklist helps us stay on the same page during a move.",
+        "meaning": "공동 체크리스트가 있으면 이사할 때 서로 같은 내용을 파악할 수 있어요."
+      }
+    ]
+  },
+  {
+    "content_index": 25,
+    "keyword": "iron out",
+    "sentence": "We need to iron out a few details before launch.",
+    "extra_examples": [
+      {
+        "sentence": "We should iron out the booking problems before the holiday rush.",
+        "meaning": "휴가철에 바빠지기 전에 예약 문제를 해결해야 해요."
+      },
+      {
+        "sentence": "The two clubs met to iron out their differences over the shared gym.",
+        "meaning": "두 동아리는 공동 체육관 사용에 관한 이견을 조율하려고 만났어요."
+      }
+    ]
+  },
+  {
+    "content_index": 26,
+    "keyword": "keep someone posted",
+    "sentence": "I'll keep you posted on any changes.",
+    "extra_examples": [
+      {
+        "sentence": "Please keep your parents posted while you travel across the country.",
+        "meaning": "전국을 여행하는 동안 부모님께 계속 소식을 전해드리세요."
+      },
+      {
+        "sentence": "The builder kept us posted as the repairs progressed.",
+        "meaning": "시공업자는 수리가 진행되는 동안 계속 상황을 알려줬어요."
+      }
+    ]
+  },
+  {
+    "content_index": 27,
+    "keyword": "rethink our approach",
+    "sentence": "We may need to rethink our approach.",
+    "extra_examples": [
+      {
+        "sentence": "Low attendance has made us rethink our approach to community events.",
+        "meaning": "참여율이 낮아서 지역 행사 운영 방식을 재검토하게 됐어요."
+      },
+      {
+        "sentence": "Could a trial lesson help us rethink our approach to teaching beginners?",
+        "meaning": "시범 수업이 초보자 교육 방식을 다시 생각하는 데 도움이 될까요?"
+      }
+    ]
+  },
+  {
+    "content_index": 28,
+    "keyword": "turn something down",
+    "sentence": "Could you turn the music down a little?",
+    "extra_examples": [
+      {
+        "sentence": "Would you mind turning the speaker down while the baby sleeps?",
+        "meaning": "아기가 자는 동안 스피커 소리를 줄여주시겠어요?"
+      },
+      {
+        "sentence": "I turned down the volume on my headphones to hear the announcement.",
+        "meaning": "안내 방송을 들으려고 헤드폰 음량을 줄였어요."
+      }
+    ]
+  },
+  {
+    "content_index": 29,
+    "keyword": "make up one's mind",
+    "sentence": "I haven't made up my mind yet.",
+    "extra_examples": [
+      {
+        "sentence": "Make up your mind about the room before someone else books it.",
+        "meaning": "다른 사람이 예약하기 전에 그 방으로 할지 결정하세요."
+      },
+      {
+        "sentence": "I made up my mind to cycle to work after trying it for a week.",
+        "meaning": "일주일 동안 해보고 자전거로 출근하기로 마음먹었어요."
+      }
+    ]
+  },
+  {
+    "content_index": 30,
+    "keyword": "a good deal",
+    "sentence": "That sounds like a good deal.",
+    "extra_examples": [
+      {
+        "sentence": "A yearly pass is a good deal if you visit the pool every week.",
+        "meaning": "매주 수영장에 간다면 연간 이용권이 경제적이에요."
+      },
+      {
+        "sentence": "Did you find a good deal on a used bicycle?",
+        "meaning": "중고 자전거를 좋은 가격에 구했나요?"
+      }
+    ]
+  },
+  {
+    "content_index": 31,
+    "keyword": "not catch something",
+    "sentence": "I didn't catch what you said.",
+    "extra_examples": [
+      {
+        "sentence": "I didn't catch which platform our train leaves from.",
+        "meaning": "우리 기차가 어느 승강장에서 출발하는지 못 들었어요."
+      },
+      {
+        "sentence": "She didn't catch the room number because the line was noisy.",
+        "meaning": "통화 음질이 나빠서 그녀는 방 번호를 못 들었어요."
+      }
+    ]
+  },
+  {
+    "content_index": 32,
+    "keyword": "narrow down",
+    "sentence": "Let's narrow down our options.",
+    "extra_examples": [
+      {
+        "sentence": "Your preferred travel dates will help us narrow down the available flights.",
+        "meaning": "희망 여행 날짜를 알려주시면 가능한 항공편을 추릴 수 있어요."
+      },
+      {
+        "sentence": "Let's narrow the search down to apartments near a subway station.",
+        "meaning": "지하철역 근처 아파트로 검색 범위를 좁혀봐요."
+      }
+    ]
+  },
+  {
+    "content_index": 33,
+    "keyword": "clarify",
+    "sentence": "Could you clarify what you mean by urgent?",
+    "extra_examples": [
+      {
+        "sentence": "Could you clarify whether breakfast is included in the room rate?",
+        "meaning": "객실 요금에 조식이 포함되는지 명확히 알려주시겠어요?"
+      },
+      {
+        "sentence": "A simple sketch helped clarify how the shelves would fit.",
+        "meaning": "간단한 그림 덕분에 선반이 어떻게 들어갈지 명확해졌어요."
+      }
+    ]
+  },
+  {
+    "content_index": 34,
+    "keyword": "stay within",
+    "sentence": "We need to stay within the budget.",
+    "extra_examples": [
+      {
+        "sentence": "Please stay within the marked area while waiting for the shuttle.",
+        "meaning": "셔틀을 기다리는 동안 표시된 구역 안에 있어주세요."
+      },
+      {
+        "sentence": "Choosing seasonal ingredients helps us stay within our grocery budget.",
+        "meaning": "제철 재료를 고르면 식비 예산을 넘기지 않는 데 도움이 돼요."
+      }
+    ]
+  },
+  {
+    "content_index": 35,
+    "keyword": "put together",
+    "sentence": "I'll put together a short summary.",
+    "extra_examples": [
+      {
+        "sentence": "My sister put together a photo album for our grandparents.",
+        "meaning": "언니가 조부모님을 위해 사진 앨범을 만들었어요."
+      },
+      {
+        "sentence": "We need to put together an emergency kit before the camping trip.",
+        "meaning": "캠핑을 가기 전에 비상용품을 챙겨야 해요."
+      }
+    ]
+  },
+  {
+    "content_index": 36,
+    "keyword": "be about to",
+    "sentence": "I'm just about to leave.",
+    "extra_examples": [
+      {
+        "sentence": "The bakery is about to close, but we can still buy some bread.",
+        "meaning": "빵집이 곧 문을 닫지만 아직 빵을 살 수 있어요."
+      },
+      {
+        "sentence": "I was about to send the invitation when I noticed the wrong date.",
+        "meaning": "초대장을 보내려던 순간 날짜가 틀린 걸 발견했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 37,
+    "keyword": "slip one's mind",
+    "sentence": "It slipped my mind.",
+    "extra_examples": [
+      {
+        "sentence": "The appointment slipped my mind until I saw the reminder on my phone.",
+        "meaning": "휴대폰 알림을 볼 때까지 약속을 깜빡하고 있었어요."
+      },
+      {
+        "sentence": "Did it slip your mind to return the spare key?",
+        "meaning": "여분 열쇠 돌려주는 걸 깜빡했나요?"
+      }
+    ]
+  },
+  {
+    "content_index": 38,
+    "keyword": "make sense",
+    "sentence": "That makes sense.",
+    "extra_examples": [
+      {
+        "sentence": "Does it make sense to rent a car for just one afternoon?",
+        "meaning": "오후 몇 시간만 쓰려고 차를 빌리는 게 합리적일까요?"
+      },
+      {
+        "sentence": "The ending made sense after I watched the first scene again.",
+        "meaning": "첫 장면을 다시 보고 나서야 결말이 이해됐어요."
+      }
+    ]
+  },
+  {
+    "content_index": 39,
+    "keyword": "could use",
+    "sentence": "I could use a break.",
+    "extra_examples": [
+      {
+        "sentence": "These plants could use some water after a week in the sun.",
+        "meaning": "일주일 내내 햇볕을 받은 이 식물들은 물이 좀 필요해요."
+      },
+      {
+        "sentence": "You look exhausted; you could use a quiet evening at home.",
+        "meaning": "많이 지쳐 보여요. 집에서 조용히 쉬는 저녁이 필요하겠어요."
+      }
+    ]
+  },
+  {
+    "content_index": 40,
+    "keyword": "touch base",
+    "sentence": "Let's touch base tomorrow morning.",
+    "extra_examples": [
+      {
+        "sentence": "I'll touch base with the venue owner about wheelchair access.",
+        "meaning": "행사장 주인에게 휠체어 접근이 가능한지 간단히 확인할게요."
+      },
+      {
+        "sentence": "Let's touch base halfway through the course to discuss your progress.",
+        "meaning": "수업 과정 중간쯤에 진도에 대해 잠깐 이야기해요."
+      }
+    ]
+  },
+  {
+    "content_index": 41,
+    "keyword": "on track",
+    "sentence": "We're on track to finish by Friday.",
+    "extra_examples": [
+      {
+        "sentence": "The renovation is back on track now that the materials have arrived.",
+        "meaning": "자재가 도착해서 보수 공사가 다시 계획대로 진행되고 있어요."
+      },
+      {
+        "sentence": "A weekly practice session keeps my language learning on track.",
+        "meaning": "매주 연습 시간을 가지면 계획대로 언어 공부를 이어갈 수 있어요."
+      }
+    ]
+  },
+  {
+    "content_index": 42,
+    "keyword": "bring someone up to speed",
+    "sentence": "Could you bring me up to speed?",
+    "extra_examples": [
+      {
+        "sentence": "This guide will bring volunteers up to speed on the recycling rules.",
+        "meaning": "이 안내서는 자원봉사자들이 재활용 규칙을 파악하는 데 도움이 될 거예요."
+      },
+      {
+        "sentence": "Could you bring me up to speed on what happened while I was away?",
+        "meaning": "제가 없는 동안 무슨 일이 있었는지 알려주시겠어요?"
+      }
+    ]
+  },
+  {
+    "content_index": 43,
+    "keyword": "weigh the pros and cons",
+    "sentence": "We need to weigh the pros and cons.",
+    "extra_examples": [
+      {
+        "sentence": "Before adopting a dog, we weighed the pros and cons of having a pet.",
+        "meaning": "개를 입양하기 전에 반려동물을 키우는 것의 장단점을 따져봤어요."
+      },
+      {
+        "sentence": "Take a day to weigh the pros and cons of moving closer to work.",
+        "meaning": "직장 근처로 이사하는 것의 장단점을 하루 동안 생각해보세요."
+      }
+    ]
+  },
+  {
+    "content_index": 44,
+    "keyword": "I'm all ears",
+    "sentence": "I'm all ears—tell me what happened.",
+    "extra_examples": [
+      {
+        "sentence": "You found a cheaper way to travel? I'm all ears.",
+        "meaning": "더 저렴하게 여행하는 방법을 찾았어요? 듣고 있어요."
+      },
+      {
+        "sentence": "I'm all ears if you want to explain why the experiment failed.",
+        "meaning": "실험이 왜 실패했는지 설명하고 싶다면 귀 기울여 들을게요."
+      }
+    ]
+  },
+  {
+    "content_index": 45,
+    "keyword": "Sounds good to me",
+    "sentence": "Sounds good to me. Let's meet at six.",
+    "extra_examples": [
+      {
+        "sentence": "A picnic by the river sounds good to me as long as it stays dry.",
+        "meaning": "비만 안 오면 강가에서 소풍을 즐기는 게 좋겠어요."
+      },
+      {
+        "sentence": "Splitting the cost equally sounds good to me.",
+        "meaning": "비용을 똑같이 나누는 건 저는 괜찮아요."
+      }
+    ]
+  },
+  {
+    "content_index": 46,
+    "keyword": "No worries",
+    "sentence": "No worries—I can wait a few minutes.",
+    "extra_examples": [
+      {
+        "sentence": "No worries about the spilled juice; I'll get a towel.",
+        "meaning": "주스 쏟은 건 괜찮아요. 수건을 가져올게요."
+      },
+      {
+        "sentence": "If you need to reschedule the lesson, no worries—just message me.",
+        "meaning": "수업 일정을 바꿔야 해도 괜찮아요. 메시지만 주세요."
+      }
+    ]
+  },
+  {
+    "content_index": 47,
+    "keyword": "It's up to you",
+    "sentence": "It's up to you where we eat.",
+    "extra_examples": [
+      {
+        "sentence": "It's up to you whether we take the scenic route or the highway.",
+        "meaning": "경치 좋은 길로 갈지 고속도로로 갈지는 당신이 정하세요."
+      },
+      {
+        "sentence": "I've picked the restaurant; it's up to you to choose dessert.",
+        "meaning": "식당은 제가 골랐으니 디저트는 당신이 골라주세요."
+      }
+    ]
+  },
+  {
+    "content_index": 48,
+    "keyword": "meet the deadline",
+    "sentence": "We need to meet the deadline this Friday.",
+    "extra_examples": [
+      {
+        "sentence": "Submit your application tonight to make sure you meet the deadline.",
+        "meaning": "마감일을 지킬 수 있도록 오늘 밤에 지원서를 제출하세요."
+      },
+      {
+        "sentence": "We won't meet the deadline unless the printer delivers the posters today.",
+        "meaning": "인쇄소에서 오늘 포스터를 보내주지 않으면 마감일을 못 맞춰요."
+      }
+    ]
+  },
+  {
+    "content_index": 49,
+    "keyword": "raise a concern",
+    "sentence": "I'd like to raise a concern about the schedule.",
+    "extra_examples": [
+      {
+        "sentence": "A parent raised a concern about traffic near the school gate.",
+        "meaning": "한 학부모가 학교 정문 근처 교통에 대해 우려를 제기했어요."
+      },
+      {
+        "sentence": "You can raise a concern anonymously through the feedback form.",
+        "meaning": "의견 제출 양식을 통해 익명으로 우려 사항을 알릴 수 있어요."
+      }
+    ]
+  },
+  {
+    "content_index": 50,
+    "keyword": "take the lead",
+    "sentence": "Mina will take the lead on this project.",
+    "extra_examples": [
+      {
+        "sentence": "Who will take the lead in welcoming our exchange students?",
+        "meaning": "교환학생을 맞이하는 일을 누가 주도할 건가요?"
+      },
+      {
+        "sentence": "The local library took the lead in organizing the reading festival.",
+        "meaning": "지역 도서관이 독서 축제 준비를 주도했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 51,
+    "keyword": "keep me in the loop",
+    "sentence": "Please keep me in the loop about any changes.",
+    "extra_examples": [
+      {
+        "sentence": "Please keep me in the loop while you arrange the family reunion.",
+        "meaning": "가족 모임을 준비하는 동안 저에게도 상황을 알려주세요."
+      },
+      {
+        "sentence": "Adding the technician to this chat will keep her in the loop.",
+        "meaning": "이 채팅에 기술자를 추가하면 그분도 진행 상황을 알 수 있어요."
+      }
+    ]
+  },
+  {
+    "content_index": 52,
+    "keyword": "That works for me",
+    "sentence": "That works for me. How about 3 p.m.?",
+    "extra_examples": [
+      {
+        "sentence": "An early check-in works for me because my flight lands at dawn.",
+        "meaning": "비행기가 새벽에 도착하니 이른 체크인이 저는 좋아요."
+      },
+      {
+        "sentence": "Would paying in two installments work for you?",
+        "meaning": "두 번으로 나눠서 결제해도 괜찮으세요?"
+      }
+    ]
+  },
+  {
+    "content_index": 53,
+    "keyword": "run low on",
+    "sentence": "We're running low on bottled water.",
+    "extra_examples": [
+      {
+        "sentence": "The printer is running low on ink, so the pages look faded.",
+        "meaning": "프린터 잉크가 부족해서 인쇄물이 흐리게 나와요."
+      },
+      {
+        "sentence": "Let the organizer know if we're running low on paper cups.",
+        "meaning": "종이컵이 부족해지면 진행자에게 알려주세요."
+      }
+    ]
+  },
+  {
+    "content_index": 54,
+    "keyword": "take your time",
+    "sentence": "Take your time. There's no need to hurry.",
+    "extra_examples": [
+      {
+        "sentence": "Take your time reading the instructions before you start assembling the desk.",
+        "meaning": "책상 조립을 시작하기 전에 설명서를 천천히 읽으세요."
+      },
+      {
+        "sentence": "There's a bench halfway up, so take your time climbing the hill.",
+        "meaning": "중간에 벤치가 있으니 서두르지 말고 언덕을 올라가세요."
+      }
+    ]
+  },
+  {
+    "content_index": 55,
+    "keyword": "didn't mean to",
+    "sentence": "I didn't mean to interrupt you.",
+    "extra_examples": [
+      {
+        "sentence": "I didn't mean to wake you when I closed the door.",
+        "meaning": "문을 닫다가 깨울 생각은 아니었어요."
+      },
+      {
+        "sentence": "We didn't mean to give you the impression that the event was canceled.",
+        "meaning": "행사가 취소된 것처럼 느끼게 할 의도는 아니었어요."
+      }
+    ]
+  },
+  {
+    "content_index": 56,
+    "keyword": "focus on",
+    "sentence": "Let's focus on the main issue first.",
+    "extra_examples": [
+      {
+        "sentence": "During the tour, we'll focus on the building's original features.",
+        "meaning": "투어에서는 건물의 원래 모습을 보여주는 특징에 집중할 거예요."
+      },
+      {
+        "sentence": "Turning off notifications helps me focus on reading.",
+        "meaning": "알림을 끄면 독서에 집중하는 데 도움이 돼요."
+      }
+    ]
+  },
+  {
+    "content_index": 57,
+    "keyword": "ahead of schedule",
+    "sentence": "We finished the project ahead of schedule.",
+    "extra_examples": [
+      {
+        "sentence": "The train arrived ahead of schedule, so we had time for breakfast.",
+        "meaning": "기차가 예정보다 일찍 도착해서 아침을 먹을 시간이 있었어요."
+      },
+      {
+        "sentence": "Finishing the repairs ahead of schedule allowed the café to reopen early.",
+        "meaning": "수리를 예정보다 일찍 마쳐서 카페가 일찍 다시 문을 열 수 있었어요."
+      }
+    ]
+  },
+  {
+    "content_index": 58,
+    "keyword": "point out",
+    "sentence": "I'd like to point out one possible risk.",
+    "extra_examples": [
+      {
+        "sentence": "The guide pointed out a rare bird in the trees.",
+        "meaning": "안내원이 나무 사이에 있는 희귀한 새를 가리켜 알려줬어요."
+      },
+      {
+        "sentence": "Please point out any spelling mistakes before I print the invitations.",
+        "meaning": "초대장을 인쇄하기 전에 맞춤법이 틀린 곳이 있으면 알려주세요."
+      }
+    ]
+  },
+  {
+    "content_index": 59,
+    "keyword": "align on",
+    "sentence": "We need to align on the project goals.",
+    "extra_examples": [
+      {
+        "sentence": "Let's align on the refund policy before we train the new staff.",
+        "meaning": "신입 직원 교육 전에 환불 정책에 대한 합의를 맞춰요."
+      },
+      {
+        "sentence": "The museum and the school aligned on a date for the visit.",
+        "meaning": "박물관과 학교가 방문 날짜에 합의했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 60,
+    "keyword": "come in handy",
+    "sentence": "This charger might come in handy.",
+    "extra_examples": [
+      {
+        "sentence": "A spare pair of socks will come in handy if your shoes get wet.",
+        "meaning": "신발이 젖으면 여분 양말이 유용할 거예요."
+      },
+      {
+        "sentence": "The flashlight came in handy during last night's power outage.",
+        "meaning": "어젯밤 정전 때 손전등이 유용했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 61,
+    "keyword": "grab a bite",
+    "sentence": "Do you want to grab a bite after class?",
+    "extra_examples": [
+      {
+        "sentence": "There's a food truck outside if you want to grab a bite during the break.",
+        "meaning": "쉬는 시간에 간단히 먹고 싶으면 밖에 푸드트럭이 있어요."
+      },
+      {
+        "sentence": "We stopped at a roadside café to grab a bite on the way to the coast.",
+        "meaning": "해안으로 가는 길에 간단히 먹으려고 길가 카페에 들렀어요."
+      }
+    ]
+  },
+  {
+    "content_index": 62,
+    "keyword": "not a big deal",
+    "sentence": "Don't worry. It's not a big deal.",
+    "extra_examples": [
+      {
+        "sentence": "Using a different brand of flour is not a big deal for this recipe.",
+        "meaning": "이 조리법에서는 다른 브랜드 밀가루를 써도 큰 문제가 없어요."
+      },
+      {
+        "sentence": "It's not a big deal that we missed the bus; another one comes in ten minutes.",
+        "meaning": "버스를 놓쳤어도 괜찮아요. 10분 뒤에 또 와요."
+      }
+    ]
+  },
+  {
+    "content_index": 63,
+    "keyword": "lose track of time",
+    "sentence": "I lost track of time while reading.",
+    "extra_examples": [
+      {
+        "sentence": "Set an alarm so you don't lose track of time while gaming.",
+        "meaning": "게임하다 시간 가는 줄 모르는 일이 없도록 알람을 맞추세요."
+      },
+      {
+        "sentence": "We lost track of time exploring the old market and missed lunch.",
+        "meaning": "옛 시장을 구경하다 시간 가는 줄 몰라서 점심을 놓쳤어요."
+      }
+    ]
+  },
+  {
+    "content_index": 64,
+    "keyword": "go over",
+    "sentence": "Let's go over the main points again.",
+    "extra_examples": [
+      {
+        "sentence": "Could we go over the safety rules before renting the kayaks?",
+        "meaning": "카약을 빌리기 전에 안전 수칙을 확인할 수 있을까요?"
+      },
+      {
+        "sentence": "My tutor went over my essay and suggested a clearer introduction.",
+        "meaning": "과외 선생님이 제 글을 검토하고 더 명확한 도입부를 제안했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 65,
+    "keyword": "wrap up",
+    "sentence": "We should wrap up the meeting soon.",
+    "extra_examples": [
+      {
+        "sentence": "The host wrapped up the show by thanking the volunteers.",
+        "meaning": "진행자는 자원봉사자들에게 감사 인사를 하며 공연을 마무리했어요."
+      },
+      {
+        "sentence": "We need to wrap up filming before the park closes.",
+        "meaning": "공원이 문을 닫기 전에 촬영을 마무리해야 해요."
+      }
+    ]
+  },
+  {
+    "content_index": 66,
+    "keyword": "speak up",
+    "sentence": "Please speak up if you have a different idea.",
+    "extra_examples": [
+      {
+        "sentence": "If the instructions seem unfair, speak up before the activity begins.",
+        "meaning": "안내 내용이 불공평하게 느껴지면 활동 시작 전에 의견을 말하세요."
+      },
+      {
+        "sentence": "It took courage to speak up about the lack of wheelchair access.",
+        "meaning": "휠체어 접근 시설이 없다는 점을 지적하려면 용기가 필요했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 67,
+    "keyword": "set aside",
+    "sentence": "Let's set aside an hour for planning.",
+    "extra_examples": [
+      {
+        "sentence": "I set aside a little money each month for travel.",
+        "meaning": "저는 여행을 위해 매달 돈을 조금씩 따로 모아둬요."
+      },
+      {
+        "sentence": "Could you set aside two tickets for us at the front desk?",
+        "meaning": "안내 데스크에 저희 표 두 장을 따로 보관해주시겠어요?"
+      }
+    ]
+  },
+  {
+    "content_index": 68,
+    "keyword": "on my way",
+    "sentence": "I’m on my way now.",
+    "extra_examples": [
+      {
+        "sentence": "I'm on my way to the bakery; would you like anything?",
+        "meaning": "빵집에 가는 길인데 뭐 사다 드릴까요?"
+      },
+      {
+        "sentence": "We were on our way to the lake when it started snowing.",
+        "meaning": "호수에 가는 도중에 눈이 내리기 시작했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 69,
+    "keyword": "see how it goes",
+    "sentence": "I’ll see how it goes.",
+    "extra_examples": [
+      {
+        "sentence": "I'll plant a few herbs on the balcony and see how it goes.",
+        "meaning": "발코니에 허브를 조금 심어보고 어떻게 되는지 볼게요."
+      },
+      {
+        "sentence": "Before booking ten lessons, try one and see how it goes.",
+        "meaning": "수업 열 번을 예약하기 전에 한 번 들어보고 판단하세요."
+      }
+    ]
+  },
+  {
+    "content_index": 70,
+    "keyword": "not really my thing",
+    "sentence": "That’s not really my thing.",
+    "extra_examples": [
+      {
+        "sentence": "Shopping in crowded malls is not really my thing.",
+        "meaning": "붐비는 쇼핑몰에서 쇼핑하는 건 제 취향이 아니에요."
+      },
+      {
+        "sentence": "Competitive sports aren't really my thing, but I love swimming for fun.",
+        "meaning": "경쟁하는 운동은 별로지만 재미로 수영하는 건 좋아해요."
+      }
+    ]
+  },
+  {
+    "content_index": 71,
+    "keyword": "get used to",
+    "sentence": "I’m still getting used to it.",
+    "extra_examples": [
+      {
+        "sentence": "It took our cat a few days to get used to the new apartment.",
+        "meaning": "우리 고양이가 새 아파트에 적응하는 데 며칠 걸렸어요."
+      },
+      {
+        "sentence": "Are you getting used to working with a different keyboard?",
+        "meaning": "다른 키보드로 일하는 데 익숙해지고 있나요?"
+      }
+    ]
+  },
+  {
+    "content_index": 72,
+    "keyword": "get straight to the point",
+    "sentence": "Let’s get straight to the point.",
+    "extra_examples": [
+      {
+        "sentence": "The interviewer got straight to the point and asked about my experience.",
+        "meaning": "면접관은 바로 본론으로 들어가 제 경력을 물었어요."
+      },
+      {
+        "sentence": "Please get straight to the point in the opening paragraph of your email.",
+        "meaning": "이메일 첫 문단에서 바로 요점을 말해주세요."
+      }
+    ]
+  },
+  {
+    "content_index": 73,
+    "keyword": "move something up",
+    "sentence": "Can we move this meeting up?",
+    "extra_examples": [
+      {
+        "sentence": "The clinic moved my appointment up because a slot became available.",
+        "meaning": "빈 시간이 생겨서 병원에서 제 예약을 앞당겼어요."
+      },
+      {
+        "sentence": "Can we move dinner up to six so the children can go to bed early?",
+        "meaning": "아이들이 일찍 잘 수 있게 저녁을 6시로 앞당길까요?"
+      }
+    ]
+  },
+  {
+    "content_index": 74,
+    "keyword": "address an issue",
+    "sentence": "We need to address this issue.",
+    "extra_examples": [
+      {
+        "sentence": "The landlord promised to address the heating issue before winter.",
+        "meaning": "집주인은 겨울 전에 난방 문제를 해결하겠다고 약속했어요."
+      },
+      {
+        "sentence": "Ignoring the leak won't help; we need to address the issue now.",
+        "meaning": "물이 새는 걸 무시해도 소용없어요. 지금 문제를 해결해야 해요."
+      }
+    ]
+  },
+  {
+    "content_index": 75,
+    "keyword": "ask for input",
+    "sentence": "I’d like your input on this.",
+    "extra_examples": [
+      {
+        "sentence": "We asked the residents for input on the new playground design.",
+        "meaning": "새 놀이터 설계에 대해 주민들의 의견을 구했어요."
+      },
+      {
+        "sentence": "Why don't you ask the kitchen staff for input before changing the menu?",
+        "meaning": "메뉴를 바꾸기 전에 주방 직원들에게 의견을 물어보는 게 어때요?"
+      }
+    ]
+  },
+  {
+    "content_index": 76,
+    "keyword": "just browsing",
+    "sentence": "I’m just browsing, thanks.",
+    "extra_examples": [
+      {
+        "sentence": "Are you looking for a particular book, or are you just browsing?",
+        "meaning": "특정 책을 찾으시나요, 아니면 그냥 둘러보시나요?"
+      },
+      {
+        "sentence": "We spent an hour just browsing in the antique shop without buying anything.",
+        "meaning": "우리는 골동품 가게에서 아무것도 사지 않고 한 시간 동안 구경만 했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 77,
+    "keyword": "that reminds me",
+    "sentence": "That reminds me—I need to text Mina.",
+    "extra_examples": [
+      {
+        "sentence": "You're going to the post office? That reminds me, I have a parcel to send.",
+        "meaning": "우체국에 가세요? 그러고 보니 저도 보낼 소포가 있어요."
+      },
+      {
+        "sentence": "That reminds me—did anyone water the plants in the meeting room?",
+        "meaning": "그러고 보니 회의실 식물에 물 준 사람 있나요?"
+      }
+    ]
+  },
+  {
+    "content_index": 78,
+    "keyword": "pass this time",
+    "sentence": "I’ll pass this time.",
+    "extra_examples": [
+      {
+        "sentence": "I'll pass this time because I'm saving up for a new bike.",
+        "meaning": "새 자전거 살 돈을 모으고 있어서 이번에는 사양할게요."
+      },
+      {
+        "sentence": "If your ankle still hurts, you should pass this time and join the next hike.",
+        "meaning": "발목이 아직 아프면 이번 등산은 쉬고 다음에 함께 가세요."
+      }
+    ]
+  },
+  {
+    "content_index": 79,
+    "keyword": "play it by ear",
+    "sentence": "Can we play it by ear?",
+    "extra_examples": [
+      {
+        "sentence": "We haven't chosen a restaurant; we'll play it by ear when we arrive.",
+        "meaning": "식당은 아직 안 골랐어요. 도착해서 상황을 보고 정할 거예요."
+      },
+      {
+        "sentence": "With a toddler on the trip, it's easier to play it by ear than follow a strict schedule.",
+        "meaning": "어린아이와 여행할 때는 빡빡한 일정보다 상황에 맞춰 움직이는 게 편해요."
+      }
+    ]
+  },
+  {
+    "content_index": 80,
+    "keyword": "keep this meeting brief",
+    "sentence": "Let’s keep this meeting brief.",
+    "extra_examples": [
+      {
+        "sentence": "The guests arrive in twenty minutes, so please keep this meeting brief.",
+        "meaning": "20분 뒤에 손님들이 오니 이번 회의는 짧게 해주세요."
+      },
+      {
+        "sentence": "To keep this meeting brief, let's save individual questions for email.",
+        "meaning": "회의를 짧게 마치도록 개인 질문은 이메일로 주고받아요."
+      }
+    ]
+  },
+  {
+    "content_index": 81,
+    "keyword": "factor in",
+    "sentence": "We need to factor in shipping time.",
+    "extra_examples": [
+      {
+        "sentence": "Remember to factor in the walk from the station when choosing a hotel.",
+        "meaning": "호텔을 고를 때 역에서 걸리는 도보 시간도 고려하세요."
+      },
+      {
+        "sentence": "The ticket price looks cheap until you factor in the baggage fees.",
+        "meaning": "수하물 요금을 고려하기 전까지는 항공권이 저렴해 보여요."
+      }
+    ]
+  },
+  {
+    "content_index": 82,
+    "keyword": "a quick overview",
+    "sentence": "Could you give us a quick overview?",
+    "extra_examples": [
+      {
+        "sentence": "The guide gave us a quick overview of the island's history on the ferry.",
+        "meaning": "안내원이 배에서 섬의 역사를 간단히 설명해줬어요."
+      },
+      {
+        "sentence": "A quick overview of the controls would help before I borrow your camera.",
+        "meaning": "카메라를 빌리기 전에 조작법을 간단히 알려주시면 좋겠어요."
+      }
+    ]
+  },
+  {
+    "content_index": 83,
+    "keyword": "up in the air",
+    "sentence": "The proposal is still up in the air.",
+    "extra_examples": [
+      {
+        "sentence": "Our holiday plans are up in the air until my sister confirms her days off.",
+        "meaning": "언니가 휴가 날짜를 확정할 때까지 우리 휴가 계획은 미정이에요."
+      },
+      {
+        "sentence": "With the main hall closed for repairs, the concert venue is up in the air.",
+        "meaning": "큰 공연장이 수리로 문을 닫아서 콘서트 장소가 정해지지 않았어요."
+      }
+    ]
+  },
+  {
+    "content_index": 84,
+    "keyword": "look forward to",
+    "sentence": "I’m looking forward to the weekend.",
+    "extra_examples": [
+      {
+        "sentence": "The children are looking forward to feeding the animals at the farm.",
+        "meaning": "아이들은 농장에서 동물에게 먹이 주는 것을 기대하고 있어요."
+      },
+      {
+        "sentence": "What are you most looking forward to about living by the sea?",
+        "meaning": "바닷가에 살면서 어떤 점이 가장 기대되나요?"
+      }
+    ]
+  },
+  {
+    "content_index": 85,
+    "keyword": "feel free to",
+    "sentence": "Feel free to use my charger.",
+    "extra_examples": [
+      {
+        "sentence": "Feel free to help yourself to the fruit on the counter.",
+        "meaning": "조리대 위에 있는 과일을 편하게 드세요."
+      },
+      {
+        "sentence": "If the room gets stuffy, feel free to open a window.",
+        "meaning": "방이 답답해지면 편하게 창문을 여세요."
+      }
+    ]
+  },
+  {
+    "content_index": 86,
+    "keyword": "end up",
+    "sentence": "I ended up staying home all day.",
+    "extra_examples": [
+      {
+        "sentence": "We took a wrong turn and ended up at a beautiful little beach.",
+        "meaning": "길을 잘못 들었다가 결국 작고 아름다운 해변에 도착했어요."
+      },
+      {
+        "sentence": "If you pack too much, you'll end up paying for extra baggage.",
+        "meaning": "짐을 너무 많이 싸면 결국 추가 수하물 요금을 내게 될 거예요."
+      }
+    ]
+  },
+  {
+    "content_index": 87,
+    "keyword": "suit someone",
+    "sentence": "That jacket really suits you.",
+    "extra_examples": [
+      {
+        "sentence": "A shorter haircut might suit you better in the summer.",
+        "meaning": "여름에는 더 짧은 머리가 더 잘 어울릴 수도 있어요."
+      },
+      {
+        "sentence": "That warm shade of green really suits your skin tone.",
+        "meaning": "그 따뜻한 녹색 계열이 피부색에 정말 잘 어울려요."
+      }
+    ]
+  },
+  {
+    "content_index": 88,
+    "keyword": "get the ball rolling",
+    "sentence": "Let’s get the ball rolling.",
+    "extra_examples": [
+      {
+        "sentence": "I'll create a signup sheet to get the ball rolling for the charity run.",
+        "meaning": "자선 달리기 행사 준비를 시작할 수 있도록 신청서를 만들게요."
+      },
+      {
+        "sentence": "One question from the audience got the ball rolling at the workshop.",
+        "meaning": "청중의 질문 하나로 워크숍 논의가 시작됐어요."
+      }
+    ]
+  },
+  {
+    "content_index": 89,
+    "keyword": "sort out",
+    "sentence": "We need to sort out the delivery details.",
+    "extra_examples": [
+      {
+        "sentence": "Let's sort out who is bringing food before we leave for the picnic.",
+        "meaning": "소풍 떠나기 전에 누가 음식을 가져올지 정리해요."
+      },
+      {
+        "sentence": "The receptionist sorted out the mistake in our booking within minutes.",
+        "meaning": "접수 직원이 몇 분 만에 예약 오류를 해결해줬어요."
+      }
+    ]
+  },
+  {
+    "content_index": 90,
+    "keyword": "elaborate on",
+    "sentence": "Could you elaborate on that point?",
+    "extra_examples": [
+      {
+        "sentence": "Could you elaborate on how the volunteer program supports local families?",
+        "meaning": "자원봉사 프로그램이 지역 가정을 어떻게 돕는지 자세히 설명해주시겠어요?"
+      },
+      {
+        "sentence": "The author elaborated on her research during the question-and-answer session.",
+        "meaning": "작가는 질의응답 시간에 자신의 조사 과정을 자세히 설명했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 91,
+    "keyword": "make steady progress",
+    "sentence": "We’re making steady progress.",
+    "extra_examples": [
+      {
+        "sentence": "With ten minutes of practice a day, I'm making steady progress on the piano.",
+        "meaning": "매일 10분씩 연습하면서 피아노 실력이 꾸준히 늘고 있어요."
+      },
+      {
+        "sentence": "The volunteers made steady progress clearing rubbish from the riverbank.",
+        "meaning": "자원봉사자들은 강변 쓰레기를 치우는 작업을 꾸준히 진행했어요."
+      }
+    ]
+  },
+  {
+    "content_index": 92,
+    "keyword": "cut someone some slack",
+    "sentence": "Cut me some slack—I'm still learning how this works.",
+    "extra_examples": [
+      {
+        "sentence": "Cut the waiter some slack; he's handling all these tables by himself.",
+        "meaning": "종업원을 좀 이해해줘요. 이 테이블들을 혼자 다 맡고 있잖아요."
+      },
+      {
+        "sentence": "My coach cut me some slack when I returned after a long break.",
+        "meaning": "오랜만에 복귀했을 때 코치가 조금 너그럽게 봐줬어요."
+      }
+    ]
+  },
+  {
+    "content_index": 93,
+    "keyword": "I'm good",
+    "sentence": "Do you want more rice? I'm good, thanks.",
+    "extra_examples": [
+      {
+        "sentence": "Would you like a blanket? I'm good, but thank you for offering.",
+        "meaning": "담요 드릴까요? 저는 괜찮아요. 그래도 물어봐 주셔서 감사해요."
+      },
+      {
+        "sentence": "I'm good for now; I'll ask if I need help carrying the boxes.",
+        "meaning": "지금은 괜찮아요. 상자를 옮기는 데 도움이 필요하면 부탁할게요."
+      }
+    ]
+  },
+  {
+    "content_index": 94,
+    "keyword": "work both ways",
+    "sentence": "Trust works both ways.",
+    "extra_examples": [
+      {
+        "sentence": "Flexibility works both ways: I cover your shifts, and you cover mine.",
+        "meaning": "서로 융통성을 발휘해야죠. 제가 당신 근무를 대신하면 당신도 제 근무를 대신해주는 거예요."
+      },
+      {
+        "sentence": "Sharing a kitchen works both ways; everyone needs to clean up.",
+        "meaning": "주방을 함께 쓰려면 서로 협조해야 해요. 모두가 뒷정리를 해야죠."
+      }
+    ]
+  },
+  {
+    "content_index": 95,
+    "keyword": "get the hang of",
+    "sentence": "It took me a week to get the hang of the new app.",
+    "extra_examples": [
+      {
+        "sentence": "It took a few attempts to get the hang of folding the tent.",
+        "meaning": "텐트 접는 요령을 익히는 데 몇 번의 시도가 필요했어요."
+      },
+      {
+        "sentence": "Have you got the hang of using the ticket machine yet?",
+        "meaning": "이제 발권기 쓰는 요령을 익혔나요?"
+      }
+    ]
+  },
+  {
+    "content_index": 96,
+    "keyword": "pencil in",
+    "sentence": "Can we pencil in a meeting for Thursday morning?",
+    "extra_examples": [
+      {
+        "sentence": "Could you pencil me in for a haircut next Wednesday afternoon?",
+        "meaning": "다음 주 수요일 오후에 미용실 예약을 일단 잡아주실 수 있나요?"
+      },
+      {
+        "sentence": "We've penciled in a beach trip, but we'll check the forecast first.",
+        "meaning": "해변 여행을 일단 잡아뒀지만 먼저 일기예보를 확인할 거예요."
+      }
+    ]
+  },
+  {
+    "content_index": 97,
+    "keyword": "take something offline",
+    "sentence": "Let's take this discussion offline and continue after the meeting.",
+    "extra_examples": [
+      {
+        "sentence": "This only affects our two teams, so let's take it offline after the group call.",
+        "meaning": "이건 우리 두 팀에만 해당하니 전체 통화 후 따로 논의해요."
+      },
+      {
+        "sentence": "Could we take the pricing discussion offline to leave time for other questions?",
+        "meaning": "다른 질문 시간도 남겨두도록 가격 논의는 따로 진행할까요?"
+      }
+    ]
+  },
+  {
+    "content_index": 98,
+    "keyword": "keep something on one's radar",
+    "sentence": "Let's keep customer feedback on our radar.",
+    "extra_examples": [
+      {
+        "sentence": "Keep the library's weekend workshops on your radar when planning activities for the kids.",
+        "meaning": "아이들 활동을 계획할 때 도서관 주말 강좌도 염두에 두세요."
+      },
+      {
+        "sentence": "I'll keep that neighborhood on my radar while looking for a new apartment.",
+        "meaning": "새 아파트를 찾는 동안 그 동네도 계속 살펴볼게요."
+      }
+    ]
+  },
+  {
+    "content_index": 99,
+    "keyword": "gain traction",
+    "sentence": "The new campaign is starting to gain traction.",
+    "extra_examples": [
+      {
+        "sentence": "The idea of a car-free Sunday gained traction after the successful trial.",
+        "meaning": "시험 운영이 성공한 뒤 차 없는 일요일이라는 제안이 지지를 얻었어요."
+      },
+      {
+        "sentence": "Our podcast began to gain traction when listeners started recommending it to friends.",
+        "meaning": "청취자들이 친구들에게 추천하기 시작하면서 우리 팟캐스트가 인기를 얻기 시작했어요."
+      }
+    ]
+  }
+]
