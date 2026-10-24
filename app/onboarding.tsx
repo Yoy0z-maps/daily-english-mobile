@@ -109,20 +109,12 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        <Pressable
-          style={[styles.guestButton, isSubmitting && { opacity: 0.55 }]}
-          disabled={isSubmitting}
-          accessibilityRole="button"
-          onPress={handleStart}
-        >
-          <Text style={styles.guestButtonText}>로그인 없이 시작하기</Text>
-        </Pressable>
-        <Text style={styles.guestHint}>
-          학습 기록은 이 기기에 저장되고, 나중에 설정에서 로그인하면 계정으로 옮겨져요.
-        </Text>
-
         <View style={styles.socialPanel}>
-          <SocialSignInPanel disabled={isSubmitting} onSignedIn={handleStart} />
+          <SocialSignInPanel
+            disabled={isSubmitting}
+            onSignedIn={handleStart}
+            onGuestPress={handleStart}
+          />
         </View>
         {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
       </ScrollView>
@@ -195,25 +187,6 @@ const createStyles = (colors: AppTheme) =>
       letterSpacing: -1.4,
       lineHeight: 49,
       marginTop: 14,
-    },
-    guestButton: {
-      alignItems: "center",
-      backgroundColor: colors.primary,
-      borderRadius: 18,
-      marginTop: 40,
-      paddingVertical: 16,
-    },
-    guestButtonText: {
-      color: "#FFFFFF",
-      fontSize: 16,
-      fontWeight: "900",
-    },
-    guestHint: {
-      color: colors.textMuted,
-      fontSize: 13,
-      lineHeight: 19,
-      marginTop: 10,
-      textAlign: "center",
     },
     socialPanel: {
       marginTop: 32,

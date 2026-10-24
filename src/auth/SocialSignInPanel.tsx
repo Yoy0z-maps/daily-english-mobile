@@ -14,6 +14,7 @@ type SocialSignInPanelProps = {
   title?: string;
   disabled?: boolean;
   onSignedIn: () => void;
+  onGuestPress?: () => void;
 };
 
 async function signInWithProvider(provider: AuthProvider) {
@@ -52,6 +53,7 @@ export function SocialSignInPanel({
   title = "SNS 계정으로 간편하게 시작하기",
   disabled = false,
   onSignedIn,
+  onGuestPress,
 }: SocialSignInPanelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -146,6 +148,21 @@ export function SocialSignInPanel({
         </Pressable>
       </View>
       {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+      {onGuestPress ? (
+        <Pressable
+          onPress={onGuestPress}
+          disabled={isDisabled}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isDisabled }}
+          accessibilityHint="학습 기록은 이 기기에 저장되고, 나중에 설정에서 로그인하면 계정으로 옮겨져요."
+          hitSlop={8}
+          style={[styles.guestLink, isDisabled && { opacity: 0.55 }]}
+        >
+          <Text style={[styles.infoText, styles.infoTextLink]}>
+            로그인 없이 시작하기
+          </Text>
+        </Pressable>
+      ) : null}
       <View style={styles.infoTextContainer}>
         <Text style={styles.infoText}>
           최초 로그인 시{" "}
@@ -212,6 +229,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: "#EF4444",
     fontSize: 14,
+  },
+  guestLink: {
+    alignSelf: "center",
+    marginTop: 8,
+    marginBottom: 28,
+    paddingVertical: 8,
   },
   infoTextContainer: {
     marginBottom: 16,
