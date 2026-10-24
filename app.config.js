@@ -92,7 +92,7 @@ module.exports = {
   expo: {
     name: "오늘의 문장",
     slug: "daily-english-sentence",
-    version: "1.0.2",
+    version: "1.0.3",
     orientation: "portrait",
     icon: "./src/assets/icon/icon.png",
     scheme: "dailyenglish",
@@ -106,7 +106,7 @@ module.exports = {
       bundleIdentifier: IOS_BUNDLE_IDENTIFIER,
       appleTeamId: APPLE_TEAM_ID,
       supportsTablet: true,
-      buildNumber: "7",
+      buildNumber: "9",
       entitlements: {
         "com.apple.security.application-groups": [APP_GROUP_IDENTIFIER],
       },
@@ -151,6 +151,9 @@ module.exports = {
           ios: {
             extraPods: GOOGLE_SIGN_IN_EXTRA_IOS_PODS,
             deploymentTarget: "17.0",
+            // Prebuilt Expo XCFrameworks are tied to the Swift version they were built with;
+            // build from source so Xcode upgrades don't break the build.
+            usePrecompiledModules: false,
           },
           android: {
             extraMavenRepos: [
