@@ -17,6 +17,7 @@ import {
   selectIsExpressionSaved,
   useAppStore
 } from '@/store/useAppStore';
+import { maybeRequestStoreReview } from '@/support/appReview';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
 import { completeCurrentContent, type CompletedHistoryEntry } from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
@@ -24,7 +25,7 @@ import { useThemeColors } from '@/theme/useThemeColors';
 import { reloadAllWidgets } from '@/widget/reloadWidgets';
 import { saveWidgetExpressionData } from '@/widget/saveWidgetExpressionData';
 
-const FREE_HISTORY_DAYS = 3;
+// const FREE_HISTORY_DAYS = 3; // TODO: 이전 문장 프리미엄 제한 재활성화 시 주석 해제
 
 const getHistoryDateLabel = (daysAgo: number) => {
   const date = new Date();
@@ -108,10 +109,12 @@ export default function HomeScreen() {
     : completedHistory
         .filter((entry: CompletedHistoryEntry) => entry.expressionId !== currentExpressionId)
         .map((entry) => ({ expressionId: entry.expressionId, daysAgo: getDaysAgo(entry.completedDate) }));
-  const visibleHistoryCount = isPremium
-    ? pastHistory.length
-    : Math.min(pastHistory.length, FREE_HISTORY_DAYS);
-  const visibleHistory = pastHistory.slice(0, visibleHistoryCount);
+  // TODO: 이전 문장 프리미엄 제한 재활성화 시 아래 주석 해제하고 visibleHistory를 slice로 되돌리기
+  // const visibleHistoryCount = isPremium
+  //   ? pastHistory.length
+  //   : Math.min(pastHistory.length, FREE_HISTORY_DAYS);
+  // const visibleHistory = pastHistory.slice(0, visibleHistoryCount);
+  const visibleHistory = pastHistory;
 
   const isCompletedToday =
     Boolean(expression) &&
@@ -155,6 +158,8 @@ export default function HomeScreen() {
       // 로그인하지 않은 사용자는 기기에만 완료 기록을 남긴다.
       if (!completeLocalContent(expression.id)) {
         showToast('오늘의 문장이 바뀌었어요. 새 문장을 확인해주세요.');
+      } else {
+        void maybeRequestStoreReview();
       }
       void syncWidgetFromStore().catch((error) => console.warn('위젯 갱신에 실패했습니다.', error));
       return;
@@ -179,6 +184,8 @@ export default function HomeScreen() {
     } finally {
       finishMutation();
     }
+
+    void maybeRequestStoreReview();
 
     try {
       // 완료는 서버에 이미 반영됐으므로, 이후 동기화가 실패해도 낙관적 상태는 되돌리지 않는다.
@@ -320,13 +327,14 @@ export default function HomeScreen() {
           })
         )}
 
-        {!isPremium && pastHistory.length > visibleHistoryCount ? (
+        {/* TODO: 이전 문장 프리미엄 제한 재활성화 시 주석 해제 */}
+        {/* {!isPremium && pastHistory.length > visibleHistoryCount ? (
           <Pressable style={styles.historyLock} onPress={() => router.push('/(tabs)/settings')}>
             <Text style={styles.historyLockKicker}>Premium</Text>
             <Text style={styles.historyLockTitle}>3일보다 이전 문장도 이어서 보기</Text>
             <Text style={styles.historyLockText}>프로에서는 지난 문장을 제한 없이 둘러볼 수 있어요.</Text>
           </Pressable>
-        ) : null}
+        ) : null} */}
       </ScrollView>
 
       <SaveToCategoryModal
