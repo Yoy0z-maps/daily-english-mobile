@@ -8,6 +8,7 @@ import { StreakCard } from '@/components/StreakCard';
 import { requestReminderPermission, supportsStudyReminders } from '@/notifications/studyReminders';
 import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store/useAppStore';
+import { openFeedbackPage, openStoreReviewPage } from '@/support/appReview';
 import { useLearningSync } from '@/sync/LearningSyncProvider';
 import { deleteCurrentAccount } from '@/sync/learningSync';
 import type { AppTheme } from '@/theme/colors';
@@ -91,6 +92,12 @@ export default function SettingsScreen() {
     }
 
     void syncNow();
+  };
+
+  const handleOpenLink = (open: () => Promise<unknown>) => {
+    void open().catch(() => {
+      Alert.alert('페이지를 열지 못했어요', '잠시 후 다시 시도해 주세요.');
+    });
   };
 
   const handleSignOut = () => {
@@ -270,6 +277,18 @@ export default function SettingsScreen() {
               <Text style={styles.chevron}>›</Text>
             </Pressable>
           )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <Pressable style={styles.menuRow} onPress={() => handleOpenLink(openStoreReviewPage)}>
+            <Text style={styles.menuText}>리뷰 작성하기</Text>
+            <Text style={styles.chevron}>›</Text>
+          </Pressable>
+          <Pressable style={styles.menuRow} onPress={() => handleOpenLink(openFeedbackPage)}>
+            <Text style={styles.menuText}>피드백 보내기</Text>
+            <Text style={styles.chevron}>›</Text>
+          </Pressable>
         </View>
 
         <View style={styles.section}>
