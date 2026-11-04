@@ -24,8 +24,8 @@ const privacyPolicy: LegalDocument = {
   title: '개인정보처리방침',
   summary:
     '오늘의 문장은 이용자의 개인정보를 필요한 범위에서만 처리하고, 학습 기록을 이용자 계정별로 분리해 관리합니다.',
-  announcedAt: '2026년 8월 15일',
-  effectiveAt: '2026년 8월 15일',
+  announcedAt: '2026년 11월 2일',
+  effectiveAt: '2026년 11월 2일',
   sections: [
     {
       title: '1. 개인정보 처리방침의 목적',
@@ -39,6 +39,7 @@ const privacyPolicy: LegalDocument = {
       bullets: [
         '소셜 로그인 정보: Supabase 이용자 식별자, 로그인 제공자, 제공자가 전달한 경우 이메일·닉네임·프로필 이미지',
         '학습 정보: 오늘의 문장 완료 기록, 현재 학습 순서, 연속 학습일, 최장 연속 학습일, 총 학습 수',
+        '이용 통계: Firebase Analytics 앱 인스턴스 식별자, 앱 실행·세션·화면 방문·참여 시간 및 기기·앱 버전 정보. 분석 이벤트에 이메일, 이름, 학습 답변 또는 로그인 계정 ID를 직접 포함하지 않습니다.',
         '저장 및 복습 정보: 저장 문장과 카테고리, 복습 답변, 정답 여부, 오답 횟수와 마스터 상태',
         '구독 정보: 프리미엄 여부, 플랜과 이용 기간 등 서비스 이용 자격 정보',
         '자동 생성 정보: 접속 시각, IP 주소, 기기·운영체제 정보, 앱 오류 및 네트워크 요청 기록, 인증 세션 정보',
@@ -55,6 +56,7 @@ const privacyPolicy: LegalDocument = {
         '기기 간 학습 기록 동기화, 스트릭·복습·오답노트·저장 문장 제공',
         '무료 이용자 대상 배너 및 보상형 광고 제공과 부정 이용 방지',
         '오류 진단, 서비스 안정성·보안 개선 및 문의 대응',
+        '일간·월간 활성 사용자 수, 재방문 및 사용자 유지율 분석을 통한 학습 서비스 개선',
         '법적 의무 이행과 분쟁 대응'
       ]
     },
@@ -72,7 +74,7 @@ const privacyPolicy: LegalDocument = {
       ],
       bullets: [
         'Supabase Inc.: 회원 인증, 데이터베이스, 서버 함수 및 계정 삭제 처리',
-        'Google LLC: Google 로그인, AdMob 배너·보상형 광고 및 광고 부정 이용 방지',
+        'Google LLC: Google 로그인, AdMob 배너·보상형 광고 및 광고 부정 이용 방지, Firebase Analytics 이용 통계 분석',
         'Apple Inc.: Apple 로그인',
         'Kakao Corp.: 카카오 로그인'
       ],

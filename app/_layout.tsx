@@ -1,4 +1,5 @@
 import { Toast } from "@/ui/Toast";
+import { AnalyticsProvider } from "@/analytics/AnalyticsProvider";
 import { Stack } from "expo-router";
 import { StudyReminderProvider } from "@/notifications/StudyReminderProvider";
 import { StatusBar } from "expo-status-bar";
@@ -87,16 +88,18 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <ConnectivityGate>
-      <AuthProvider>
-        <ContentProvider>
-          <LearningSyncProvider>
-            <StudyReminderProvider>
-              <RootNavigator />
-            </StudyReminderProvider>
-          </LearningSyncProvider>
-        </ContentProvider>
-      </AuthProvider>
-    </ConnectivityGate>
+    <AnalyticsProvider>
+      <ConnectivityGate>
+        <AuthProvider>
+          <ContentProvider>
+            <LearningSyncProvider>
+              <StudyReminderProvider>
+                <RootNavigator />
+              </StudyReminderProvider>
+            </LearningSyncProvider>
+          </ContentProvider>
+        </AuthProvider>
+      </ConnectivityGate>
+    </AnalyticsProvider>
   );
 }

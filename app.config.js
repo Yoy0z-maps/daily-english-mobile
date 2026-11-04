@@ -2,6 +2,11 @@ const APP_GROUP_IDENTIFIER = "group.com.dailyenglish.widget";
 const IOS_BUNDLE_IDENTIFIER = "com.dailyenglish.sentences";
 const WIDGET_BUNDLE_IDENTIFIER = `${IOS_BUNDLE_IDENTIFIER}.DailyEnglishWidget`;
 const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID ?? "GQM6B63P8T";
+const fs = require("node:fs");
+const FIREBASE_IOS_FILE = process.env.FIREBASE_IOS_CONFIG ?? "./GoogleService-Info.plist";
+const FIREBASE_ANDROID_FILE = process.env.FIREBASE_ANDROID_CONFIG ?? "./google-services.json";
+const HAS_FIREBASE_IOS = fs.existsSync(FIREBASE_IOS_FILE);
+const HAS_FIREBASE_ANDROID = fs.existsSync(FIREBASE_ANDROID_FILE);
 const ADMOB_ANDROID_APP_ID =
   process.env.ADMOB_ANDROID_APP_ID ?? "ca-app-pub-3780332868290454~6325666938";
 const ADMOB_IOS_APP_ID =
@@ -103,6 +108,7 @@ module.exports = {
       backgroundColor: "#F7F8FF",
     },
     ios: {
+      ...(HAS_FIREBASE_IOS ? { googleServicesFile: FIREBASE_IOS_FILE } : {}),
       bundleIdentifier: IOS_BUNDLE_IDENTIFIER,
       appleTeamId: APPLE_TEAM_ID,
       supportsTablet: true,
@@ -115,12 +121,14 @@ module.exports = {
       },
     },
     android: {
+      ...(HAS_FIREBASE_ANDROID ? { googleServicesFile: FIREBASE_ANDROID_FILE } : {}),
       package: "com.dailyenglish.sentences",
     },
     web: {
       bundler: "metro",
     },
     plugins: [
+      ...(HAS_FIREBASE_IOS || HAS_FIREBASE_ANDROID ? ["@react-native-firebase/app"] : []),
       "expo-font",
       "./plugins/withPodDeploymentTarget",
       "./plugins/withSceneLifecycle",
@@ -149,6 +157,8 @@ module.exports = {
         "expo-build-properties",
         {
           ios: {
+            useFrameworks: "static",
+            forceStaticLinking: ["RNFBApp", "RNFBAnalytics"],
             extraPods: GOOGLE_SIGN_IN_EXTRA_IOS_PODS,
             deploymentTarget: "17.0",
             // Prebuilt Expo XCFrameworks are tied to the Swift version they were built with;
@@ -184,6 +194,7 @@ module.exports = {
       typedRoutes: true,
     },
     extra: {
+      firebaseAnalytics: { ios: HAS_FIREBASE_IOS, android: HAS_FIREBASE_ANDROID },
       appGroupIdentifier: APP_GROUP_IDENTIFIER,
     },
   },

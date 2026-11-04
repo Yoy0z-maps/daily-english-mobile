@@ -24,6 +24,10 @@ function alignPodDeploymentTargets(contents) {
 
 module.exports = (config) => withPodfile(config, (result) => {
   result.modResults.contents = alignPodDeploymentTargets(result.modResults.contents);
+  const staticFlags = '$RNFirebaseAsStaticFramework = true\n$RNGoogleMobileAdsAsStaticFramework = true\n';
+  if (!result.modResults.contents.includes('$RNFirebaseAsStaticFramework = true')) {
+    result.modResults.contents = staticFlags + result.modResults.contents;
+  }
   return result;
 });
 module.exports.alignPodDeploymentTargets = alignPodDeploymentTargets;
