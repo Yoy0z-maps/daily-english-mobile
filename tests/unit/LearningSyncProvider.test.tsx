@@ -4,7 +4,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Pressable, Text, View } from 'react-native';
 
 jest.mock('@/auth/AuthProvider', () => ({
-  useAuth: () => ({ session: { user: { id: 'user-1' } } })
+  useAuth: () => ({ isReady: true, session: { user: { id: 'user-1' } } })
 }));
 
 jest.mock('@/store/useAppStore', () => {

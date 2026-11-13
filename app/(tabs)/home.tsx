@@ -122,7 +122,9 @@ export default function HomeScreen() {
     completedExpressionIds.includes(expression.id);
 
   useEffect(() => {
-    if (!hasHydrated || !expression) {
+    // 이 계정의 기록을 처음 불러오는 중에는 기기 기록이 비어 있거나 다른 주인의 것이라
+    // 위젯에 첫 문장 같은 임시 값이 저장될 수 있으므로, 불러온 뒤에 저장한다.
+    if (!hasHydrated || isInitialSyncing || !expression) {
       return;
     }
 
@@ -132,7 +134,7 @@ export default function HomeScreen() {
         ? expressions[currentPosition + 1]
         : undefined
     }).then(() => reloadAllWidgets());
-  }, [expression, hasHydrated, streak, lastCompletedDate, completedExpressionIds, expressions, currentPosition, isAdminMode]);
+  }, [expression, hasHydrated, isInitialSyncing, streak, lastCompletedDate, completedExpressionIds, expressions, currentPosition, isAdminMode]);
 
   const syncWidgetFromStore = async () => {
     if (!expression) {
