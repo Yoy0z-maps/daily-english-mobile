@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>오늘의 문장 — Google Play 스크린샷</title>
+<!--
+  사용법:  play-screenshots.html?slide=home   (1080×1920 로 렌더)
+           play-screenshots.html?slide=all    (브라우저에서 전체 미리보기)
+  실행화면 원본은 raw/*.png (Android 에뮬레이터 1080×2400 캡쳐).
+  색상은 src/theme/colors.ts lightTheme / darkTheme 과 동일하게 유지.
+-->
+<style>
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/instagram/fonts/PretendardVariable.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: block;
+}
+:root {
+  --bg: #F7F8FF; --text: #141827; --muted: #6B7280;
+  --primary: #4F7CFF; --purple: #8B5CF6;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #fff; }
+body {
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+  -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;
+}
+body.single { overflow: hidden; }
+body.all { display: flex; flex-wrap: wrap; gap: 40px; padding: 40px; background: #D9DCE8; }
+body.all .slide { zoom: .4; }
+
+/* ── 슬라이드 (1080×1920) ─────────────────────────────────── */
+.slide {
+  position: relative; width: 1080px; height: 1920px; overflow: hidden;
+  background: linear-gradient(180deg, #E6EAFF 0%, #F1F2FF 42%, #F7F8FF 100%);
+  color: var(--text);
+}
+.slide.dark {
+  background: linear-gradient(180deg, #0E1220 0%, #151B33 55%, #1E2650 100%);
+  color: #F8FAFC;
+}
+
+.orb { position: absolute; border-radius: 50%; pointer-events: none; }
+.orb-a { width: 620px; height: 620px; right: -190px; top: -230px; background: rgba(139,92,246,.15); }
+.orb-b { width: 520px; height: 520px; left: -260px; bottom: 120px; background: rgba(79,124,255,.10); }
+.flip .orb-a { right: auto; left: -200px; }
+.flip .orb-b { left: auto; right: -260px; }
+.dark .orb-a { background: rgba(127,160,255,.14); }
+.dark .orb-b { background: rgba(183,148,246,.12); }
+
+/* ── 카피 ─────────────────────────────────────────────────── */
+.copy { position: absolute; left: 84px; right: 84px; top: 104px; z-index: 2; }
+.eyebrow {
+  font-size: 24px; font-weight: 800; letter-spacing: .16em; color: var(--primary);
+}
+.dark .eyebrow { color: #7FA0FF; }
+.copy h1 {
+  font-size: 74px; font-weight: 900; line-height: 1.2; letter-spacing: -2.6px;
+  margin-top: 22px; word-break: keep-all;
+}
+.hl {
+  background: linear-gradient(90deg, #4F7CFF 0%, #8B5CF6 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.dark .hl { background-image: linear-gradient(90deg, #7FA0FF 0%, #B794F6 100%); }
+.copy p {
+  font-size: 29px; font-weight: 600; line-height: 1.5; color: var(--muted);
+  margin-top: 22px; letter-spacing: -.4px; word-break: keep-all;
+}
+.dark .copy p { color: #AAB2C5; }
+
+/* ── 안드로이드 폰 프레임 ─────────────────────────────────── */
+.phone {
+  position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%);
+  width: 636px; height: 1382px; padding: 13px; border-radius: 66px;
+  background: #11141F;
+  box-shadow:
+    0 0 0 2px #2B3044 inset,
+    0 50px 110px rgba(36,30,110,.30),
+    0 14px 30px rgba(36,30,110,.16);
+  z-index: 1;
+}
+.dark .phone {
+  background: #05070D;
+  box-shadow: 0 0 0 2px #3A4160 inset, 0 50px 120px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
+}
+/* 측면 버튼 */
+.phone::before, .phone::after {
+  content: ''; position: absolute; right: -5px; width: 5px; border-radius: 0 3px 3px 0; background: #2B3044;
+}
+.phone::before { top: 250px; height: 92px; }
+.phone::after  { top: 380px; height: 160px; }
+.screen {
+  position: relative; width: 100%; height: 100%; border-radius: 54px; overflow: hidden;
+  background: var(--bg);
+}
+.screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.punch {
+  position: absolute; left: 50%; top: 17px; transform: translateX(-50%);
+  width: 26px; height: 26px; border-radius: 50%; background: #05070D;
+  box-shadow: 0 0 0 3px rgba(5,7,13,.25); z-index: 3;
+}
+
+/* ── 위젯 슬라이드: 캡쳐에서 위젯 부분만 잘라 크게 띄움 ──────── */
+.float-widget {
+  position: absolute; left: 50%; z-index: 4; transform: translateX(-50%);
+  background-repeat: no-repeat;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.35), 0 50px 100px rgba(0,0,0,.55), 0 12px 30px rgba(0,0,0,.35);
+}
+</style>
+</head>
+<body>
+<template id="tpl">
+  <section class="slide">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="copy">
+      <div class="eyebrow"></div>
+      <h1></h1>
+      <p></p>
+    </div>
+    <div class="phone"><div class="screen"><div class="punch"></div><img alt=""></div></div>
+  </section>
+</template>
+
+<script>
+// 문구는 App Store 스크린샷(src/assets/screenshots)과 톤을 맞춤.
+// widget: raw 캡쳐(1080×2400) 안에서 위젯이 차지하는 영역 [x, y, w, h] — 크게 띄워서 보여줌
+const SLIDES = [
+  { id: 'home', img: 'home.png', eyebrow: 'DAILY ENGLISH',
+    title: '매일 아침, <span class="hl">오늘의 문장</span><br>하나면 충분해요',
+    sub: '진짜 대화에서 쓰는 표현만 골라, 하루 1문장씩 자연스럽게 쌓아가요.' },
+  { id: 'detail', img: 'detail.png', eyebrow: 'EXPRESSION', flip: true,
+    title: '언제, 어떤 느낌으로<br><span class="hl">쓰는지까지</span> 알려줘요',
+    sub: '상황 설명과 추가 예문, 말할 때 느낌까지 한 번에 익혀요.' },
+  { id: 'widget', img: 'widget.png', eyebrow: 'WIDGET', dark: true,
+    widget: [50, 384, 982, 552],
+    title: '앱을 열지 않아도,<br><span class="hl">홈 화면</span>에서 바로 확인',
+    sub: '홈 화면 위젯으로 오늘의 문장을 매일 자연스럽게 만나요.' },
+  { id: 'saved', img: 'saved.png', eyebrow: 'SAVED LIBRARY', flip: true,
+    title: '카테고리별로 모아보는<br><span class="hl">나만의 문장</span> 보관함',
+    sub: '저장한 표현을 카테고리로 정리하고, 언제든 다시 꺼내 복습해요.' },
+  { id: 'review', img: 'review.png', eyebrow: 'REVIEW',
+    title: '퀴즈로 다시 풀면서<br><span class="hl">확실하게</span> 기억에 남겨요',
+    sub: '뜻에 맞는 문장을 고르며, 틀렸던 표현부터 먼저 복습해요.' },
+  { id: 'wrong-note', img: 'wrong-note.png', eyebrow: 'WRONG NOTE', flip: true,
+    title: '틀린 문장은<br><span class="hl">오답노트</span>에 차곡차곡',
+    sub: '헷갈린 표현만 모아 보고, 2번 연속 맞히면 자동으로 마스터돼요.' },
+  { id: 'settings', img: 'settings.png', eyebrow: 'DARK MODE · REMINDER', dark: true,
+    title: '눈이 편한 다크 모드,<br>잊지 않게 <span class="hl">학습 알림</span>',
+    sub: '오늘 문장을 완료하지 않았다면 매일 저녁 8시에 알려드려요.' },
+];
+
+(() => {
+  const q = new URLSearchParams(location.search);
+  const want = q.get('slide') || 'all';
+  const list = want === 'all' ? SLIDES : SLIDES.filter(s => s.id === want);
+  document.body.classList.add(want === 'all' ? 'all' : 'single');
+
+  const tpl = document.getElementById('tpl');
+  const loads = [];
+  for (const s of list) {
+    const el = tpl.content.firstElementChild.cloneNode(true);
+    if (s.dark) el.classList.add('dark');
+    if (s.flip) el.classList.add('flip');
+    el.querySelector('.eyebrow').textContent = s.eyebrow;
+    el.querySelector('h1').innerHTML = s.title;
+    el.querySelector('p').textContent = s.sub;
+    const img = el.querySelector('img');
+    loads.push(new Promise(ok => { img.onload = img.onerror = ok; }));
+    img.src = 'raw/' + s.img;
+    document.body.appendChild(el);
+
+    if (s.widget) {
+      // 폰 화면 속 위젯 위치에 맞춰, 같은 캡쳐에서 잘라낸 위젯을 크게 겹쳐 올림
+      const [x, y, w, h] = s.widget;
+      const phone = el.querySelector('.phone');
+      const screenScale = (phone.offsetWidth - 26) / 1080;   // 폰 화면 / 캡쳐 너비
+      const k = 900 / w;                                     // 띄운 위젯 너비 900px
+      const centerY = phone.offsetTop + 13 + (y + h / 2) * screenScale;
+      const f = document.createElement('div');
+      f.className = 'float-widget';
+      Object.assign(f.style, {
+        width: w * k + 'px', height: h * k + 'px', top: (centerY - h * k / 2) + 'px',
+        borderRadius: 50 * k + 'px',
+        backgroundImage: `url(raw/${s.img})`,
+        backgroundSize: 1080 * k + 'px auto',
+        backgroundPosition: `${-x * k}px ${-y * k}px`,
+      });
+      el.appendChild(f);
+    }
+  }
+
+  Promise.all([document.fonts.ready, ...loads]).then(() => requestAnimationFrame(() => {
+    document.documentElement.dataset.ready = '1';
+  }));
+})();
+</script>
+</body>
+</html>
