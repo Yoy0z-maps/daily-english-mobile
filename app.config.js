@@ -97,7 +97,7 @@ module.exports = {
   expo: {
     name: "오늘의 문장",
     slug: "daily-english-sentence",
-    version: "1.0.4",
+    version: "1.0.5",
     orientation: "portrait",
     icon: "./src/assets/icon/icon.png",
     scheme: "dailyenglish",
@@ -112,7 +112,7 @@ module.exports = {
       bundleIdentifier: IOS_BUNDLE_IDENTIFIER,
       appleTeamId: APPLE_TEAM_ID,
       supportsTablet: true,
-      buildNumber: "10",
+      buildNumber: "11",
       entitlements: {
         "com.apple.security.application-groups": [APP_GROUP_IDENTIFIER],
       },
